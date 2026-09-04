@@ -1,16 +1,44 @@
-# React + Vite
+# FISC-vento
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Sistema centralizado de gestión y control de activos con captura
+automatizada de datos (QR, código de barras y RFID) para la Facultad de
+Ingeniería de Sistemas Computacionales (FISC), Universidad Tecnológica de
+Panamá.
 
-Currently, two official plugins are available:
+Trabajo de graduación — Laura Saucedo y Diego Torres, Licenciatura en
+Desarrollo y Gestión de Software, 2026.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Estructura del repositorio
 
-## React Compiler
+```
+FISC-vento/
+├── backend/    # Django + Django REST Framework, PostgreSQL
+├── frontend/   # React + Vite, Tailwind CSS
+├── docker-compose.yml
+└── docs/       # arquitectura, decisiones (ADRs)
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Ver [`docs/arquitectura.md`](docs/arquitectura.md) para el detalle de cómo
+se corresponden las apps del backend con las features del frontend, y
+[`docs/decisiones/`](docs/decisiones/) para las decisiones de alcance ya
+tomadas (RFID, Préstamos/Traslados como stretch goals).
 
-## Expanding the Oxlint configuration
+## Desarrollo local
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+1. Copiar los `.env.example` (raíz, `backend/`, `frontend/`) a `.env` y
+   ajustar valores si hace falta.
+2. `docker-compose up` levanta `db` (PostgreSQL), `backend` (Django en
+   `:8000`) y `frontend` (Vite en `:5173`).
+3. Backend: `cd backend && python manage.py migrate && python manage.py createsuperuser`.
+4. Frontend: `cd frontend && npm install && npm run dev`.
+
+## Pruebas de carga
+
+```
+locust -f backend/loadtests/locustfile.py --host http://localhost:8000
+```
+
+## Stack
+
+Django · Django REST Framework · PostgreSQL · React · Vite · Tailwind CSS ·
+Docker · Locust.
