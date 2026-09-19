@@ -9,10 +9,15 @@ import AuditoriaPage from "../features/auditoria/AuditoriaPage";
 import UsuariosPage from "../features/administracion/UsuariosPage";
 import PrestamosPage from "../features/prestamos/PrestamosPage";
 import TrasladosPage from "../features/traslados/TrasladosPage";
+import Login from "../features/login/Login";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: <Login />,
+  },
+  {
+    path: "/dashboard",
     element: <App />,
     children: [
       { index: true, element: <DashboardPage /> },
