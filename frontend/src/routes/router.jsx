@@ -13,11 +13,11 @@ import Login from "../features/login/Login";
 
 export const router = createBrowserRouter([
   {
-    path: "/login",
+    path: "/",
     element: <Login />,
   },
   {
-    path: "/",
+    path: "/dashboard",
     element: <App />,
     children: [
       { index: true, element: <DashboardPage /> },
