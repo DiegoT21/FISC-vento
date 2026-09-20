@@ -47,7 +47,7 @@ export default function ActivosListPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filtered.map((a) => (
-              <tr key={a.id} onClick={() => navigate(`/activos/${a.id}`)} className="hover:bg-gray-50 cursor-pointer">
+              <tr key={a.id} onClick={() => navigate(`/dashboard/activos/${a.id}`)} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-4 py-2.5 text-gray-800">{a.desc}</td>
                 <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">{a.servitac}</td>
                 <td className="px-4 py-2.5 text-gray-600">{a.ubicacion}</td>

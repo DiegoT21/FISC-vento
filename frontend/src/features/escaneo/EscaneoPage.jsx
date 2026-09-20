@@ -29,7 +29,7 @@ export default function EscaneoPage() {
         <button onClick={simulate} className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded-lg">Simular lectura</button>
       </div>
       {found && (
-        <div onClick={() => navigate(`/activos/${found.id}`)} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between cursor-pointer">
+        <div onClick={() => navigate(`/dashboard/activos/${found.id}`)} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between cursor-pointer">
           <div>
             <p className="text-sm font-medium text-emerald-800">{found.desc}</p>
             <p className="text-xs text-emerald-600">{found.servitac} — {found.ubicacion}</p>
