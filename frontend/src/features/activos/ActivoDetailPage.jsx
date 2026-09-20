@@ -13,7 +13,7 @@ export default function ActivoDetailPage() {
   if (!activo) {
     return (
       <div className="space-y-4">
-        <button onClick={() => navigate("/activos")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+        <button onClick={() => navigate("/dashboard/activos")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
           <ChevronLeft size={16} /> Volver al listado
         </button>
         <p className="text-sm text-gray-500">Activo no encontrado.</p>
@@ -23,7 +23,7 @@ export default function ActivoDetailPage() {
 
   return (
     <div className="space-y-4">
-      <button onClick={() => navigate("/activos")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+      <button onClick={() => navigate("/dashboard/activos")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
         <ChevronLeft size={16} /> Volver al listado
       </button>
       <div className="bg-white rounded-lg border border-gray-200 p-5">
