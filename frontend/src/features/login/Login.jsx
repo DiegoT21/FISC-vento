@@ -57,7 +57,7 @@ const Login = () => {
                   <Radio size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">Lectura RFID UHF & Códigos QR</h3>
+                  <h3 className="font-semibold text-sm mb-1">Lectura RFID UHF & Códigos de Barras</h3>
                   <p className="text-xs text-green-200 opacity-90 leading-relaxed">
                     Identificación instantánea de activos de alta densidad
                   </p>

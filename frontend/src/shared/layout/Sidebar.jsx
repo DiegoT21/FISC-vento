@@ -11,7 +11,7 @@ const LOGO_SRC =
 const NAV = [
   { path: "/dashboard", label: "Panel principal", icon: LayoutDashboard, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/activos", label: "Activos", icon: Boxes, roles: ["Administrador", "Custodio", "Auditor"] },
-  { path: "/dashboard/escaneo", label: "Escaneo QR / RFID", icon: ScanLine, roles: ["Administrador", "Custodio", "Auditor"] },
+  { path: "/dashboard/escaneo", label: "Escaneo Barras / RFID", icon: ScanLine, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/ubicaciones", label: "Ubicaciones", icon: MapPin, roles: ["Administrador", "Auditor"] },
   { path: "/dashboard/prestamos", label: "Préstamos", icon: HandCoins, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/traslados", label: "Traslados", icon: ArrowLeftRight, roles: ["Administrador", "Custodio"] },

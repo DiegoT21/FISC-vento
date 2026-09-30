@@ -4,7 +4,7 @@
 
 - **Backend**: Django + Django REST Framework, PostgreSQL.
 - **Frontend**: React (Vite), Tailwind CSS.
-- **Identificación de activos**: QR, código de barras y RFID.
+- **Identificación de activos**: código de barras (ya existente en las placas físicas) y RFID (nuevo con este proyecto). No se usa QR — ver `docs/decisiones/0001-rfid-en-alcance.md`.
 - **Contenerización**: Docker / docker-compose (servicios `db`, `backend`, `frontend`).
 - **Pruebas de carga**: Locust (`backend/loadtests/locustfile.py`).
 
@@ -18,7 +18,7 @@ el código correspondiente:
 | Usuarios/roles   | `usuarios`                | `administracion`                       | Core |
 | Ubicaciones      | `ubicaciones`              | `ubicaciones`                          | Core |
 | Activos          | `activos`                  | `activos`                              | Core |
-| Escaneo (QR/barras/RFID) | `escaneo`          | `escaneo`                              | Core |
+| Escaneo (barras/RFID) | `escaneo`          | `escaneo`                              | Core |
 | Auditoría        | `auditoria`                | `auditoria`                            | Core |
 | Reportes         | `reportes`                 | `dashboard` (consume los endpoints)    | Core |
 | Préstamos        | `prestamos`                | `prestamos`                            | Stretch |

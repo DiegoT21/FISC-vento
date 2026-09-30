@@ -6,14 +6,7 @@ from rest_framework.response import Response
 from apps.activos.models import Activo
 from apps.activos.serializers import ActivoSerializer
 
-from .services import buscar_por_codigo, generar_codigo_barras, generar_qr
-
-
-@api_view(["GET"])
-def qr_de_activo(request, activo_id):
-    activo = get_object_or_404(Activo, pk=activo_id)
-    imagen = generar_qr(activo)
-    return HttpResponse(imagen.getvalue(), content_type="image/png")
+from .services import buscar_por_codigo, generar_codigo_barras
 
 
 @api_view(["GET"])
@@ -25,7 +18,7 @@ def barras_de_activo(request, activo_id):
 
 @api_view(["POST"])
 def escanear(request):
-    """Recibe { "valor": "<lo leído por cámara QR/barras o por el lector RFID>" }
+    """Recibe { "valor": "<lo leído por cámara de barras o por el lector RFID>" }
     y devuelve el Activo correspondiente, si existe."""
     valor = request.data.get("valor", "")
     activo = buscar_por_codigo(valor)
