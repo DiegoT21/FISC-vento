@@ -11,6 +11,20 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fiscvento
+          POSTGRES_USER: fiscvento
+          POSTGRES_PASSWORD: fiscvento
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,6 +35,10 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings.dev
           POSTGRES_HOST: localhost
+          POSTGRES_DB: fiscvento
+          POSTGRES_USER: fiscvento
+          POSTGRES_PASSWORD: fiscvento
+          POSTGRES_PORT: 5432
 
   frontend:
     runs-on: ubuntu-latest
