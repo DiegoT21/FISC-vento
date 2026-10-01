@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Library,
@@ -13,14 +13,32 @@ import {
   LogIn,
   Headset
 } from 'lucide-react';
+import { useAuth } from '../../shared/hooks/useAuth';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, autenticado } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [enviando, setEnviando] = useState(false);
 
-  const handleLogin = (e) => {
+  useEffect(() => {
+    if (autenticado) navigate('/dashboard', { replace: true });
+  }, [autenticado, navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Aquí podrías agregar la lógica de autenticación en el futuro
-    navigate('/dashboard');
+    setError('');
+    setEnviando(true);
+    try {
+      await login(email, password);
+      navigate('/dashboard');
+    } catch {
+      setError('Correo o contraseña incorrectos.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -135,6 +153,9 @@ const Login = () => {
                   </div>
                   <input
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                     className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50/50 text-sm focus:ring-2 focus:ring-fisc-800/20 focus:border-fisc-800 transition-colors placeholder-gray-400"
                     placeholder="ej. maria.arrocha@utp.ac.pa"
                   />
@@ -157,6 +178,9 @@ const Login = () => {
                   </div>
                   <input
                     type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                     className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50/50 text-sm focus:ring-2 focus:ring-fisc-800/20 focus:border-fisc-800 transition-colors placeholder-gray-400"
                     placeholder="••••••••••••"
                   />
@@ -177,12 +201,20 @@ const Login = () => {
                 <Info size={14} className="text-gray-400" />
               </div>
 
+              {/* Error */}
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-fisc-800 hover:bg-fisc-900 text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-fisc-800/20"
+                disabled={enviando}
+                className="w-full bg-fisc-800 hover:bg-fisc-900 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-fisc-800/20"
               >
-                Ingresar al Sistema
+                {enviando ? "Ingresando..." : "Ingresar al Sistema"}
                 <LogIn size={18} />
               </button>
             </form>
