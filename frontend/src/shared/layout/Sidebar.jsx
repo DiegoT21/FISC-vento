@@ -52,7 +52,7 @@ export default function Sidebar() {
             <Link
               key={n.path}
               to={n.path}
-              className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm ${active ? "bg-green-50 text-green-800 font-medium border-r-2 border-green-800" : "text-gray-600 hover:bg-gray-50"}`}
+              className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm ${active ? "bg-fisc-50 text-fisc-800 font-medium border-r-2 border-fisc-800" : "text-gray-600 hover:bg-gray-50"}`}
             >
               <Icon size={16} /> {n.label}
             </Link>
@@ -64,7 +64,7 @@ export default function Sidebar() {
         <div className="bg-[#EEF1FB] rounded-2xl p-2.5 select-none">
           <p className="text-xs font-semibold text-gray-500 mb-1.5 px-1">Rol activo</p>
           <div className="bg-white rounded-xl px-3 py-2 flex items-center gap-2.5 shadow-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#005A36] shrink-0"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-fisc-800 shrink-0"></span>
             <span className="text-sm font-bold text-gray-900 tracking-tight">{role}</span>
           </div>
         </div>
@@ -73,10 +73,10 @@ export default function Sidebar() {
         <div className="flex items-center justify-between px-1 pt-0.5">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-full bg-[#005A36] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-fisc-800 flex items-center justify-center">
                 <User size={20} className="text-white" />
               </div>
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-[#85F9BD] border-2 border-white rounded-full"></span>
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-fisc-300 border-2 border-white rounded-full"></span>
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 leading-tight truncate">Dra. M. Arrocha</p>

@@ -9,7 +9,7 @@ export default function UsuariosPage() {
           <h1 className="text-lg font-medium text-gray-900">Administración</h1>
           <p className="text-sm text-gray-500">Usuarios y roles del sistema</p>
         </div>
-        <button className="bg-green-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-green-900">+ Nuevo usuario</button>
+        <button className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900">+ Nuevo usuario</button>
       </div>
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
