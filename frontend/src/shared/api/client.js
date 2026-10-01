@@ -1,13 +1,16 @@
-// Thin fetch wrapper. No real backend yet — this only scaffolds the shape
-// so features can start swapping mock data for real calls incrementally.
+// Thin fetch wrapper around the Django API. Attaches the auth token
+// (set by useAuth on login) to every request automatically.
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const TOKEN_KEY = "fisc_token";
 
 async function request(path, { method = "GET", body, headers, ...rest } = {}) {
+  const token = localStorage.getItem(TOKEN_KEY);
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Token ${token}` } : {}),
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

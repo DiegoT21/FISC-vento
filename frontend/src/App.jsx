@@ -1,13 +1,16 @@
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import AppShell from "./shared/layout/AppShell";
-import { RoleProvider } from "./shared/hooks/useRole";
+import { useAuth } from "./shared/hooks/useAuth";
 
 export default function App() {
+  const { autenticado, cargando } = useAuth();
+
+  if (cargando) return null;
+  if (!autenticado) return <Navigate to="/" replace />;
+
   return (
-    <RoleProvider>
-      <AppShell>
-        <Outlet />
-      </AppShell>
-    </RoleProvider>
+    <AppShell>
+      <Outlet />
+    </AppShell>
   );
 }

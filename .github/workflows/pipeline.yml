@@ -59,6 +59,7 @@ jobs:
   deploy-staging:
     needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Desplegar en staging por SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -163,6 +164,7 @@ jobs:
     needs: promote-to-main
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 15
     steps:
       - name: Desplegar en producción por SSH
         uses: appleboy/ssh-action@v1.2.0
