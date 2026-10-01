@@ -22,3 +22,40 @@ jobs:
             git reset --hard origin/develop
             sudo docker compose up -d --build
             sudo docker compose exec -T backend python manage.py migrate --noinput
+
+      - name: Smoke test (verificar que staging responde)
+        run: |
+          set -e
+          HOST="${{ secrets.STAGING_HOST }}"
+
+          check() {
+            url="$1"
+            name="$2"
+            shift 2
+            expected_codes="$*"
+            for i in 1 2 3 4 5 6; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+              for ok in $expected_codes; do
+                if [ "$code" = "$ok" ]; then
+                  echo "OK  $name -> HTTP $code"
+                  return 0
+                fi
+              done
+              echo "  intento $i: $name -> HTTP $code (esperaba $expected_codes), reintentando..."
+              sleep 5
+            done
+            echo "FALLO $name -> HTTP $code (esperaba $expected_codes)"
+            return 1
+          }
+
+          fail=0
+          check "http://${HOST}:5173/" "Frontend" 200 || fail=1
+          check "http://${HOST}:8000/admin/login/" "Backend admin" 200 || fail=1
+          # 403 es la respuesta correcta sin autenticar (DRF exige login) — confirma que Django/DRF responde.
+          check "http://${HOST}:8000/api/activos/" "Backend API" 200 403 || fail=1
+
+          if [ "$fail" -eq 1 ]; then
+            echo "El smoke test encontró al menos un servicio caído tras el deploy."
+            exit 1
+          fi
+          echo "Smoke test OK: staging responde correctamente."
