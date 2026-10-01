@@ -16,10 +16,10 @@ export default function EscaneoPage() {
         <p className="text-sm text-gray-500">Identifica un activo por código de barras o lector RFID</p>
       </div>
       <div className="flex gap-2">
-        <button onClick={() => setMode("barras")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "barras" ? "bg-green-800 text-white border-green-800" : "bg-white text-gray-600 border-gray-200"}`}>
+        <button onClick={() => setMode("barras")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "barras" ? "bg-fisc-800 text-white border-fisc-800" : "bg-white text-gray-600 border-gray-200"}`}>
           <Barcode size={15} /> Código de barras
         </button>
-        <button onClick={() => setMode("rfid")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "rfid" ? "bg-green-800 text-white border-green-800" : "bg-white text-gray-600 border-gray-200"}`}>
+        <button onClick={() => setMode("rfid")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "rfid" ? "bg-fisc-800 text-white border-fisc-800" : "bg-white text-gray-600 border-gray-200"}`}>
           <Radio size={15} /> Lector RFID
         </button>
       </div>

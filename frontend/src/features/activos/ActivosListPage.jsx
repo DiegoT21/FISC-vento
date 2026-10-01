@@ -21,7 +21,7 @@ export default function ActivosListPage() {
           <h1 className="text-lg font-medium text-gray-900">Activos</h1>
           <p className="text-sm text-gray-500">{filtered.length} de {ACTIVOS.length} activos</p>
         </div>
-        <button className="bg-green-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-green-900">+ Registrar activo</button>
+        <button className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900">+ Registrar activo</button>
       </div>
       <div className="flex gap-2">
         <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 flex-1">

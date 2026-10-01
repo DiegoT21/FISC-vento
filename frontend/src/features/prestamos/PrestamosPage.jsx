@@ -9,7 +9,7 @@ export default function PrestamosPage() {
           <h1 className="text-lg font-medium text-gray-900">Préstamos</h1>
           <p className="text-sm text-gray-500">Activos prestados a personas de la facultad</p>
         </div>
-        <button className="bg-green-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-green-900">+ Nuevo préstamo</button>
+        <button className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900">+ Nuevo préstamo</button>
       </div>
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">

@@ -17,7 +17,7 @@ export default function ActivoTabs({ activo }) {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-3 py-2 text-sm border-b-2 -mb-px ${tab === id ? "border-green-700 text-green-800 font-medium" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            className={`px-3 py-2 text-sm border-b-2 -mb-px ${tab === id ? "border-fisc-700 text-fisc-800 font-medium" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           >
             {label}
           </button>
@@ -43,7 +43,7 @@ export default function ActivoTabs({ activo }) {
           <div className="flex items-center gap-2 text-sm text-gray-700 border border-gray-100 rounded px-3 py-2">
             <Paperclip size={14} className="text-gray-400" /> Factura_compra.pdf
           </div>
-          <button className="text-sm text-green-800 hover:underline">+ Adjuntar documento</button>
+          <button className="text-sm text-fisc-800 hover:underline">+ Adjuntar documento</button>
         </div>
       )}
     </>
