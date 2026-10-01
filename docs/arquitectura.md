@@ -8,6 +8,15 @@
 - **Contenerización**: Docker / docker-compose (servicios `db`, `backend`, `frontend`).
 - **Pruebas de carga**: Locust (`backend/loadtests/locustfile.py`).
 
+## Backups de base de datos
+
+`scripts/backup_db.sh` hace un `pg_dump` comprimido del contenedor `db` y
+rota backups más viejos que 7 días (configurable con `RETENCION_DIAS`).
+Corre por cron, una vez al día, de forma independiente en cada servidor
+(staging y producción tienen sus propios backups, no se comparten). Los
+dumps quedan en `~/FISC-vento/backups/` en el propio servidor — nunca se
+suben al repo. Para restaurar uno: `scripts/restore_db.sh <archivo>`.
+
 ## Apps del backend ↔ features del frontend
 
 Cada dominio tiene el mismo nombre en ambos lados para que sea fácil ubicar
