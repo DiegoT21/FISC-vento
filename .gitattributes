@@ -1,0 +1,4 @@
+# Los scripts de shell corren en Linux (servidores EC2) — nunca deben
+# llevar finales de línea CRLF, sin importar el autocrlf del cliente que
+# los edite.
+*.sh text eol=lf

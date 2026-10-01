@@ -38,3 +38,7 @@ db.sqlite3
 *.pem
 *.key
 *.ppk
+
+# Backups de base de datos (viven solo en cada servidor)
+backups/
+*.sql.gz
