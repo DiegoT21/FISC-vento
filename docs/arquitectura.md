@@ -26,6 +26,40 @@ el código correspondiente:
 
 Ver `docs/decisiones/` para el porqué de las decisiones marcadas arriba.
 
+## Sistema de diseño — paleta de colores
+
+**Verde institucional (`fisc-*`)**: definido en `frontend/tailwind.config.js`,
+es el color de marca único del sistema. `fisc-800` (`#0d6936`) se extrajo
+por pixeles directamente del sello oficial de la FISC (el logo embebido en
+`frontend/src/shared/layout/Sidebar.jsx`), no es un verde elegido a ojo.
+Antes de unificarlo convivían 3 verdes sin coincidir entre sí (el
+`green-800` por defecto de Tailwind, `#0c5942` del Login, `#005A36` del
+sidebar) — ahora todo el frontend usa esta única escala:
+
+| Token | Hex | Uso típico |
+|---|---|---|
+| `fisc-50` | `#edfdf4` | Fondos muy claros (nav activa, chip de rol) |
+| `fisc-100` | `#d6fae6` | Texto claro sobre fondo verde oscuro |
+| `fisc-200` | `#a4f4c8` | Texto secundario sobre fondo verde oscuro |
+| `fisc-300` | `#65eca1` | Acentos claros (indicador "en línea") |
+| `fisc-400`–`fisc-600` | `#1ce375`–`#118846` | Reservados, sin uso todavía |
+| `fisc-700` | `#0d6d38` | Íconos/círculos secundarios (Login) |
+| `fisc-800` | `#0d6936` | **Color primario** — botones, nav activa, enlaces, el verde real del logo |
+| `fisc-900` | `#084021` | Hover de botones, degradados, fondo oscuro del Login |
+| `fisc-950` | `#052915` | Reservado, sin uso todavía |
+
+**Colores de estado** (badges y stat cards, en `shared/components/Badge.jsx`
+y `StatCard.jsx`) — paleta estándar de Tailwind, independiente del verde de
+marca porque comunican significado (bien/mal/alerta), no identidad:
+
+| Tono | Significado | Clases |
+|---|---|---|
+| `good` | EN USO, EXISTE | `emerald-50` / `emerald-700` |
+| `bad` | DAÑADO, EXTRAVIADO | `red-50` / `red-700` |
+| `warn` | Alertas | `amber-50` / `amber-700` |
+| `info` | ADICIONAR, Pendiente | `sky-50` / `sky-700` |
+| `neutral` | Default | `gray-100` / `gray-700` |
+
 ## Pendiente de diseño (no resuelto en la estructura, sí en el modelo de datos real)
 
 El mockup original usaba dos campos de estado distintos (`estatus`:
