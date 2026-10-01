@@ -4,7 +4,7 @@ carga/concurrencia). Ejecutar con:
     locust -f backend/loadtests/locustfile.py --host http://localhost:8000
 
 Simula usuarios consultando el listado de activos y escaneando códigos
-(QR/barras/RFID) desde varias áreas simultáneamente, tal como describe la
+(barras/RFID) desde varias áreas simultáneamente, tal como describe la
 sección 5.1.1 del anteproyecto.
 """
 from locust import HttpUser, between, task

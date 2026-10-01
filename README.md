@@ -1,7 +1,7 @@
 # FISC-vento
 
 Sistema centralizado de gestión y control de activos con captura
-automatizada de datos (QR, código de barras y RFID) para la Facultad de
+automatizada de datos (código de barras y RFID) para la Facultad de
 Ingeniería de Sistemas Computacionales (FISC), Universidad Tecnológica de
 Panamá.
 

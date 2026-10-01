@@ -33,3 +33,8 @@ db.sqlite3
 
 # Env files (each service has its own .env.example checked in)
 .env
+
+# Llaves SSH / credenciales — nunca deben subirse al repo
+*.pem
+*.key
+*.ppk

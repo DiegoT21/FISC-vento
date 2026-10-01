@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QrCode, Radio, Check } from "lucide-react";
+import { Barcode, Radio, Check } from "lucide-react";
 import { ACTIVOS } from "../../mocks/activos.mock";
 
 export default function EscaneoPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("qr");
+  const [mode, setMode] = useState("barras");
   const [found, setFound] = useState(null);
   const simulate = () => setFound(ACTIVOS[Math.floor(Math.random() * ACTIVOS.length)]);
 
@@ -13,19 +13,19 @@ export default function EscaneoPage() {
     <div className="space-y-4 max-w-md">
       <div>
         <h1 className="text-lg font-medium text-gray-900">Escaneo</h1>
-        <p className="text-sm text-gray-500">Identifica un activo por cámara o lector RFID</p>
+        <p className="text-sm text-gray-500">Identifica un activo por código de barras o lector RFID</p>
       </div>
       <div className="flex gap-2">
-        <button onClick={() => setMode("qr")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "qr" ? "bg-green-800 text-white border-green-800" : "bg-white text-gray-600 border-gray-200"}`}>
-          <QrCode size={15} /> QR / Barras
+        <button onClick={() => setMode("barras")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "barras" ? "bg-green-800 text-white border-green-800" : "bg-white text-gray-600 border-gray-200"}`}>
+          <Barcode size={15} /> Código de barras
         </button>
         <button onClick={() => setMode("rfid")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm border ${mode === "rfid" ? "bg-green-800 text-white border-green-800" : "bg-white text-gray-600 border-gray-200"}`}>
           <Radio size={15} /> Lector RFID
         </button>
       </div>
       <div className="bg-white border border-gray-200 border-dashed rounded-lg h-52 flex flex-col items-center justify-center gap-3 text-gray-400">
-        {mode === "qr" ? <QrCode size={40} /> : <Radio size={40} />}
-        <p className="text-xs">{mode === "qr" ? "Vista de cámara (simulada)" : "Esperando lectura de proximidad..."}</p>
+        {mode === "barras" ? <Barcode size={40} /> : <Radio size={40} />}
+        <p className="text-xs">{mode === "barras" ? "Vista de cámara (simulada)" : "Esperando lectura de proximidad..."}</p>
         <button onClick={simulate} className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded-lg">Simular lectura</button>
       </div>
       {found && (
