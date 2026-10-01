@@ -1,4 +1,4 @@
-# Prueba del pipeline: 2026-09-30
+# Prueba del pipeline: 2026-10-01 (segundo intento, secret re-pegado)
 name: Deploy a Staging
 
 on:
