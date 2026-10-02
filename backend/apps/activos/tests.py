@@ -3,7 +3,7 @@ from django.test import TestCase
 from rest_framework.test import APITestCase
 
 from apps.ubicaciones.models import Departamento, Ubicacion
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Rol, Usuario
 
 from .models import Activo, Categoria, EstadoActivo, OrigenActivo
 
@@ -142,3 +142,89 @@ class ActivoAPITests(APITestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.cpu.refresh_from_db()
         self.assertEqual(self.cpu.estado, EstadoActivo.INACTIVO)
+
+
+class PermisosPorRolTests(APITestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create_user(username="a", password="x", rol=Rol.ADMINISTRADOR)
+        self.custodio = Usuario.objects.create_user(username="c", password="x", rol=Rol.CUSTODIO)
+        self.auditor = Usuario.objects.create_user(username="u", password="x", rol=Rol.AUDITOR)
+        self.categoria = Categoria.objects.create(nombre="Equipo")
+        depto = Departamento.objects.create(nombre="Departamento de TI")
+        self.ubicacion = Ubicacion.objects.create(departamento=depto, nombre="Lab. 3-407")
+        self.activo = Activo.objects.create(
+            codigo="SVT-1", descripcion="CPU", categoria=self.categoria, ubicacion=self.ubicacion
+        )
+        self.datos = {
+            "codigo": "SVT-NUEVO",
+            "descripcion": "Monitor",
+            "categoria": self.categoria.id,
+            "ubicacion": self.ubicacion.id,
+        }
+
+    def _como(self, usuario):
+        self.client.force_authenticate(usuario)
+
+    def test_todos_los_roles_pueden_leer(self):
+        for usuario in (self.admin, self.custodio, self.auditor):
+            self._como(usuario)
+            self.assertEqual(self.client.get(URL).status_code, 200)
+            self.assertEqual(self.client.get(f"{URL}{self.activo.id}/").status_code, 200)
+
+    def test_administrador_y_custodio_pueden_crear_y_editar(self):
+        for i, usuario in enumerate((self.admin, self.custodio)):
+            self._como(usuario)
+            r = self.client.post(URL, {**self.datos, "codigo": f"SVT-N{i}"})
+            self.assertEqual(r.status_code, 201)
+            r = self.client.patch(f"{URL}{self.activo.id}/", {"descripcion": f"Editado {i}"})
+            self.assertEqual(r.status_code, 200)
+
+    def test_auditor_no_puede_crear_editar_ni_borrar(self):
+        self._como(self.auditor)
+        self.assertEqual(self.client.post(URL, self.datos).status_code, 403)
+        self.assertEqual(self.client.patch(f"{URL}{self.activo.id}/", {"estado": "INACTIVO"}).status_code, 403)
+        self.assertEqual(self.client.delete(f"{URL}{self.activo.id}/").status_code, 403)
+        self.assertTrue(Activo.objects.filter(pk=self.activo.pk).exists())
+
+    def test_custodio_no_puede_borrar(self):
+        self._como(self.custodio)
+        self.assertEqual(self.client.delete(f"{URL}{self.activo.id}/").status_code, 403)
+        self.assertTrue(Activo.objects.filter(pk=self.activo.pk).exists())
+
+    def test_administrador_puede_borrar(self):
+        self._como(self.admin)
+        self.assertEqual(self.client.delete(f"{URL}{self.activo.id}/").status_code, 204)
+
+    def test_auditor_no_puede_crear_categorias(self):
+        self._como(self.auditor)
+        self.assertEqual(self.client.post(f"{URL}categorias/", {"nombre": "Nueva"}).status_code, 403)
+        self._como(self.custodio)
+        self.assertEqual(self.client.post(f"{URL}categorias/", {"nombre": "Nueva"}).status_code, 201)
+
+    def test_solo_administrador_escribe_ubicaciones_pero_todos_leen(self):
+        for usuario in (self.admin, self.custodio, self.auditor):
+            self._como(usuario)
+            self.assertEqual(self.client.get("/api/ubicaciones/departamentos/").status_code, 200)
+        self._como(self.custodio)
+        r = self.client.post("/api/ubicaciones/departamentos/", {"nombre": "Docencia"})
+        self.assertEqual(r.status_code, 403)
+        self._como(self.admin)
+        r = self.client.post("/api/ubicaciones/departamentos/", {"nombre": "Docencia"})
+        self.assertEqual(r.status_code, 201)
+
+    def test_custodio_no_ve_auditoria_pero_auditor_si(self):
+        self._como(self.custodio)
+        self.assertEqual(self.client.get("/api/auditoria/").status_code, 403)
+        self._como(self.auditor)
+        self.assertEqual(self.client.get("/api/auditoria/").status_code, 200)
+
+    def test_auditor_no_accede_a_traslados(self):
+        self._como(self.auditor)
+        self.assertEqual(self.client.get("/api/traslados/").status_code, 403)
+        self._como(self.custodio)
+        self.assertEqual(self.client.get("/api/traslados/").status_code, 200)
+
+    def test_auditor_lee_pero_no_escribe_prestamos(self):
+        self._como(self.auditor)
+        self.assertEqual(self.client.get("/api/prestamos/").status_code, 200)
+        self.assertEqual(self.client.post("/api/prestamos/", {}).status_code, 403)
