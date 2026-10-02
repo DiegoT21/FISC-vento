@@ -7,7 +7,7 @@ from .models import Activo, Categoria
 class ActivoAdmin(admin.ModelAdmin):
     list_display = ["codigo", "descripcion", "categoria", "ubicacion", "estado"]
     list_filter = ["estado", "categoria", "ubicacion__departamento"]
-    search_fields = ["codigo", "descripcion"]
+    search_fields = ["codigo", "descripcion", "ref", "numero_serie", "marca", "modelo"]
 
 
 admin.site.register(Categoria)

@@ -2,6 +2,7 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase
 from rest_framework.test import APITestCase
 
+from apps.prestamos.models import Prestamo
 from apps.ubicaciones.models import Departamento, Ubicacion
 from apps.usuarios.models import Rol, Usuario
 
@@ -228,3 +229,124 @@ class PermisosPorRolTests(APITestCase):
         self._como(self.auditor)
         self.assertEqual(self.client.get("/api/prestamos/").status_code, 200)
         self.assertEqual(self.client.post("/api/prestamos/", {}).status_code, 403)
+
+
+class CamposDeIdentificacionTests(APITestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create_user(username="a", password="x", rol=Rol.ADMINISTRADOR)
+        self.client.force_authenticate(self.admin)
+        self.categoria = Categoria.objects.create(nombre="Equipo")
+        depto = Departamento.objects.create(nombre="Departamento de TI")
+        self.ubicacion = Ubicacion.objects.create(departamento=depto, nombre="Lab. 3-407")
+
+    def _datos(self, **extra):
+        datos = {
+            "codigo": "SVT-1",
+            "descripcion": "CPU Dell",
+            "categoria": self.categoria.id,
+            "ubicacion": self.ubicacion.id,
+        }
+        datos.update(extra)
+        return datos
+
+    def test_guarda_ref_serie_marca_y_modelo(self):
+        r = self.client.post(
+            URL,
+            self._datos(ref="REF-00842", numero_serie="SN-123", marca="Dell", modelo="OptiPlex 3080"),
+        )
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.data["ref"], "REF-00842")
+        self.assertEqual(r.data["numero_serie"], "SN-123")
+        self.assertEqual(r.data["marca"], "Dell")
+        self.assertEqual(r.data["modelo"], "OptiPlex 3080")
+
+    def test_dos_activos_sin_ref_ni_serie_no_chocan(self):
+        for codigo in ("SVT-1", "SVT-2"):
+            r = self.client.post(
+                URL, self._datos(codigo=codigo, ref="", numero_serie="", tag_rfid="")
+            )
+            self.assertEqual(r.status_code, 201)
+            self.assertIsNone(r.data["ref"])
+            self.assertIsNone(r.data["numero_serie"])
+            self.assertIsNone(r.data["tag_rfid"])
+
+    def test_numero_de_serie_duplicado_se_rechaza(self):
+        self.client.post(URL, self._datos(numero_serie="SN-1"))
+        r = self.client.post(URL, self._datos(codigo="SVT-2", numero_serie="SN-1"))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("numero_serie", r.data)
+
+    def test_ref_duplicado_se_rechaza(self):
+        self.client.post(URL, self._datos(ref="REF-1"))
+        r = self.client.post(URL, self._datos(codigo="SVT-2", ref="REF-1"))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("ref", r.data)
+
+    def test_edicion_completa_conserva_su_propio_serie(self):
+        creado = self.client.post(URL, self._datos(numero_serie="SN-1")).data
+        r = self.client.put(f"{URL}{creado['id']}/", self._datos(numero_serie="SN-1", marca="HP"))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data["marca"], "HP")
+
+    def test_busca_por_serie_marca_y_ref(self):
+        self.client.post(URL, self._datos(ref="REF-9", numero_serie="SN-ABC", marca="Lenovo"))
+        for termino in ("SN-ABC", "Lenovo", "REF-9"):
+            r = self.client.get(URL, {"search": termino})
+            self.assertEqual(r.data["count"], 1, termino)
+
+
+class BorradoProtegidoTests(APITestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create_user(username="a", password="x", rol=Rol.ADMINISTRADOR)
+        self.client.force_authenticate(self.admin)
+        self.categoria = Categoria.objects.create(nombre="Equipo")
+        self.depto = Departamento.objects.create(nombre="Departamento de TI")
+        self.ubicacion = Ubicacion.objects.create(departamento=self.depto, nombre="Lab. 3-407")
+        self.activo = Activo.objects.create(
+            codigo="SVT-1", descripcion="CPU", categoria=self.categoria, ubicacion=self.ubicacion
+        )
+
+    def test_categoria_en_uso_responde_409_con_mensaje(self):
+        r = self.client.delete(f"{URL}categorias/{self.categoria.id}/")
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("1 activos", r.data["detail"])
+        self.assertTrue(Categoria.objects.filter(pk=self.categoria.pk).exists())
+
+    def test_ubicacion_en_uso_responde_409(self):
+        r = self.client.delete(f"/api/ubicaciones/{self.ubicacion.id}/")
+        self.assertEqual(r.status_code, 409)
+        self.assertTrue(Ubicacion.objects.filter(pk=self.ubicacion.pk).exists())
+
+    def test_departamento_con_ubicaciones_en_uso_responde_409_y_no_borra_nada(self):
+        r = self.client.delete(f"/api/ubicaciones/departamentos/{self.depto.id}/")
+        self.assertEqual(r.status_code, 409)
+        self.assertTrue(Departamento.objects.filter(pk=self.depto.pk).exists())
+        self.assertTrue(Ubicacion.objects.filter(pk=self.ubicacion.pk).exists())
+
+    def test_ubicacion_sin_activos_se_borra(self):
+        libre = Ubicacion.objects.create(departamento=self.depto, nombre="Oficina 17")
+        self.assertEqual(self.client.delete(f"/api/ubicaciones/{libre.id}/").status_code, 204)
+
+    def test_activo_con_prestamo_responde_409(self):
+        Prestamo.objects.create(activo=self.activo, prestado_a=self.admin)
+        r = self.client.delete(f"{URL}{self.activo.id}/")
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("préstamos", r.data["detail"])
+
+
+class CodigoDeBarrasEndpointTests(APITestCase):
+    def test_devuelve_png_a_usuarios_autenticados(self):
+        usuario = Usuario.objects.create_user(username="u", password="x", rol=Rol.AUDITOR)
+        categoria = Categoria.objects.create(nombre="Equipo")
+        depto = Departamento.objects.create(nombre="Departamento de TI")
+        ubicacion = Ubicacion.objects.create(departamento=depto, nombre="Lab. 3-407")
+        activo = Activo.objects.create(
+            codigo="SVT-1", descripcion="CPU", categoria=categoria, ubicacion=ubicacion
+        )
+        ruta = f"/api/escaneo/activos/{activo.id}/barras/"
+        self.assertEqual(self.client.get(ruta).status_code, 403)
+        self.client.force_authenticate(usuario)
+        r = self.client.get(ruta)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "image/png")
+        self.assertTrue(r.content.startswith(b"\x89PNG"))

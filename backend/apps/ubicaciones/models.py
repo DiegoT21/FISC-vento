@@ -9,6 +9,7 @@ class Departamento(models.Model):
     class Meta:
         verbose_name = "Departamento"
         verbose_name_plural = "Departamentos"
+        ordering = ["nombre"]
 
     def __str__(self):
         return self.nombre
@@ -26,6 +27,7 @@ class Ubicacion(models.Model):
     class Meta:
         verbose_name = "Ubicación"
         verbose_name_plural = "Ubicaciones"
+        ordering = ["nombre"]
         unique_together = ("departamento", "nombre")
 
     def __str__(self):

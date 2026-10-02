@@ -21,7 +21,15 @@ class ActivoViewSet(viewsets.ModelViewSet):
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["categoria", "estado", "ubicacion", "origen"]
-    search_fields = ["codigo", "descripcion"]
+    search_fields = [
+        "codigo",
+        "descripcion",
+        "ref",
+        "numero_serie",
+        "marca",
+        "modelo",
+        "tag_rfid",
+    ]
     ordering_fields = ["codigo", "creado_en", "estado"]
 
     def get_permissions(self):

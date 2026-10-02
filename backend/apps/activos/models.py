@@ -23,6 +23,9 @@ class OrigenActivo(models.TextChoices):
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
 
+    class Meta:
+        ordering = ["nombre"]
+
     def __str__(self):
         return self.nombre
 
@@ -39,6 +42,22 @@ class Activo(models.Model):
         help_text="ID único de la etiqueta RFID asociada, si el activo tiene una.",
     )
     descripcion = models.CharField(max_length=255)
+    ref = models.CharField(
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Número REF (correlativo interno), si el activo lo tiene.",
+    )
+    numero_serie = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Número de serie del fabricante, si lo tiene.",
+    )
+    marca = models.CharField(max_length=100, blank=True)
+    modelo = models.CharField(max_length=100, blank=True)
     categoria = models.ForeignKey(
         Categoria, on_delete=models.PROTECT, related_name="activos"
     )

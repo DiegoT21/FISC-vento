@@ -20,5 +20,10 @@ class Prestamo(models.Model):
     fecha_prestamo = models.DateTimeField(auto_now_add=True)
     fecha_devolucion = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        verbose_name = "Préstamo"
+        verbose_name_plural = "Préstamos"
+        ordering = ["-fecha_prestamo"]
+
     def __str__(self):
         return f"{self.activo} → {self.prestado_a}"
