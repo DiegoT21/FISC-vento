@@ -4,13 +4,13 @@ Se cargan en **cada** sesión. Si algo aquí choca con lo que se te pide, avisa 
 
 ## 1. Qué es esto
 
-Sistema de gestión y captura de activos de la FISC (UTP, Panamá). Trabajo de graduación de Laura Saucedo y Diego Torres, 2026. Stack fijo: Django + DRF + PostgreSQL / React (Vite) + Tailwind / Docker. Arquitectura y mapa de dominios: `docs/arquitectura.md`. Diseño de páginas: `docs/diseno-paginas-y-modulos.md`.
+Sistema de gestión y captura de activos de la FISC (UTP, Panamá). Trabajo de graduación de Laura Saucedo y Diego Torres, 2026. Stack fijo: Django + DRF + PostgreSQL / React (Vite) + Tailwind / Docker. Arquitectura y mapa de dominios: `docs/arquitectura.md`. **Plan y trazabilidad contra el documento teórico del trabajo de graduación: `docs/plan-trabajo-grado.md`** (consúltalo antes de decidir alcance y mantenlo al día). Diseño de páginas: `docs/diseno-paginas-y-modulos.md`.
 
 ## 2. Decisiones cerradas (no re-abrir sin que el usuario lo pida)
 
-- **Sin QR, en ninguna parte.** Solo código de barras (el que ya traen las placas) y RFID. ADR `docs/decisiones/0001-rfid-en-alcance.md`. No generes ni leas QR, ni añadas `qrcode`.
-- **Estados de un Activo:** `ACTIVO`, `INACTIVO`, `INOPERATIVO` (enum `EstadoActivo`). El `estatus` del mockup (EXISTE/EXTRAVIADO…) **no** es un campo de Activo; es un resultado de auditoría y está pendiente para el Cap. III. No lo reintroduzcas.
-- **Core:** usuarios, ubicaciones, activos, escaneo, auditoría, reportes. **Stretch:** préstamos (prioridad baja) y traslados (media). No inviertas esfuerzo en stretch sin que se pida. ADR 0002.
+- **Sin QR, por ahora.** Solo código de barras (el que ya traen las placas) y RFID. ADR `docs/decisiones/0001-rfid-en-alcance.md`. ⚠️ El documento teórico todavía incluye QR: la decisión final está pendiente (D1 en `docs/plan-trabajo-grado.md`). Hasta que el usuario decida, no generes ni leas QR ni añadas `qrcode`.
+- **Estados de un Activo:** hoy `ACTIVO`, `INACTIVO`, `INOPERATIVO` (enum `EstadoActivo`). ⚠️ RF-09 del documento teórico pide además `ESTATUS` (Adicionar/Existe/Extraviado/No existe) y `ESTADO DEL BIEN`: decisión pendiente (D2 en `docs/plan-trabajo-grado.md`). No cambies el modelo de estados sin que el usuario decida.
+- **Core:** usuarios, ubicaciones, activos, escaneo, auditoría, reportes. **Stretch (provisional):** préstamos y traslados. ⚠️ El documento teórico los incluye en el alcance (RF-07/RF-08): decisión pendiente (D3 en `docs/plan-trabajo-grado.md`). ADR 0002.
 - Toda decisión de alcance nueva se registra como ADR en `docs/decisiones/` (formato de los existentes).
 
 ## 3. Idioma y tono
