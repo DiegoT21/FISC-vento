@@ -27,7 +27,7 @@ Roles: `ADMINISTRADOR`, `CUSTODIO`, `AUDITOR` (`apps/usuarios/models.py`). **El 
 ## 5. Definición de “terminado”
 
 Una tarea no está hecha hasta que:
-1. Backend: hay tests nuevos y `python manage.py test` pasa; las migraciones están generadas y commiteadas.
+1. Backend: hay tests nuevos y `python manage.py test` pasa (incluye `backend/pruebas_seguridad/`; no la desactives ni la silencies: si falla, hay un hueco de seguridad real o la matriz de permisos cambió); las migraciones están generadas y commiteadas.
 2. Frontend: `npm run lint` sin errores nuevos y `npm run build` pasa.
 3. Si tocó UI, se probó el flujo real (no solo compilar). Si no pudiste probarlo, **dilo explícitamente**.
 4. Estados de carga, error y vacío cubiertos en toda pantalla que lea la API.

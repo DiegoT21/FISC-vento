@@ -24,6 +24,7 @@ Complementa `CLAUDE.md` (que manda en caso de duda). Estructura: una app por dom
    - **`permission_classes` explícitas** (ver abajo). Para reglas por acción, sobreescribe `get_permissions`.
 5. **URLs**: registra en el router de la app; la ruta cuelga de `config/urls.py` como `api/<dominio>/`.
 6. **Tests** (`tests.py`): modelo (restricciones, defaults, `__str__`) **y** API (lista, filtros, crear, validación, editar) **y** permisos por rol.
+7. **Seguridad**: añade el recurso a la lista `RECURSOS` de `backend/pruebas_seguridad/test_autorizacion.py` con los roles permitidos por operación (las rutas nuevas ya entran solas en las pruebas de autenticación). Detalle en `docs/seguridad.md`.
 
 ## Permisos por rol
 
