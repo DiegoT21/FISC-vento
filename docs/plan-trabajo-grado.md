@@ -10,7 +10,7 @@ Leyenda: ✅ cumplido · 🟡 parcial · ❌ no iniciado · ⚠️ contradice la
 |---|---|
 | Infraestructura y despliegue (Docker, CI/CD, 2 servidores, backups) | ✅ por encima de lo prometido |
 | Autenticación y roles (RF-01) | ✅ |
-| Activos, ubicaciones, panel, búsqueda (RF-02/04/06) | 🟡 base real; faltan campos y edición |
+| Activos, ubicaciones, panel, búsqueda (RF-02/04/06) | 🟡 casi completo; faltan las fotografías |
 | Escaneo (RF-05) | 🟡 backend listo; interfaz es simulada |
 | Préstamos, traslados (RF-07/08) | 🟡 solo esqueleto en backend; interfaz simulada |
 | Auditoría (RF-11) | 🟡 existe, pero **no cumple lo prometido** (ver §3) |
@@ -51,11 +51,11 @@ RF-02 pide: **REF** (correlativo interno), **número de serie**, **marca**, **mo
 | RF | Requerimiento | Estado | Evidencia / falta |
 |---|---|---|---|
 | RF-01 | Autenticación y roles | ✅ | Login por token, 3 roles, permisos por rol en la API con tests. |
-| RF-02 | Registro con doble identificador y ficha completa | 🟡 | Alta con código, descripción, categoría, ubicación, origen, estado y RFID. **Faltan** REF, serie, marca, modelo, fotos (D4). |
+| RF-02 | Registro con doble identificador y ficha completa | 🟡 | Alta y edición con código, REF, número de serie, marca, modelo, descripción, categoría, ubicación, origen, estado y RFID. **Faltan** las fotografías (hay que decidir dónde se guardan los archivos). |
 | RF-03 | Ingreso rápido / alta masiva | ❌ | No existe importación (CSV/Excel) ni formulario de lote. |
-| RF-04 | Departamentos y ubicaciones | 🟡 | Crear y listar desde la interfaz. Faltan editar y borrar (borrar una ubicación con activos asignados probablemente devuelva un error 500; no lo he probado). |
-| RF-05 | Identificación híbrida | 🟡 | Backend: imagen de código de barras y búsqueda por código o RFID. **Interfaz de escaneo simulada**, sin cámara ni lector. QR: ver D1. |
-| RF-06 | Búsqueda y filtrado multi-criterio | 🟡 | API filtra por categoría, origen, estado, ubicación y búsqueda. La interfaz solo expone búsqueda y categoría; no hay búsqueda por serie (no existe el campo). |
+| RF-04 | Departamentos y ubicaciones | ✅ | Crear, listar, renombrar y eliminar desde la interfaz; borrar algo en uso responde con un mensaje claro (409). Las categorías se pueden crear al registrar un activo, pero no editar ni borrar desde la interfaz. |
+| RF-05 | Identificación híbrida | 🟡 | Backend: imagen de código de barras y búsqueda por código o RFID. La ficha del activo muestra la etiqueta de código de barras para descargar o imprimir. **Interfaz de escaneo simulada**, sin cámara ni lector. QR: ver D1. |
+| RF-06 | Búsqueda y filtrado multi-criterio | ✅ | API e interfaz filtran por categoría, estado, origen y ubicación, y buscan por descripción, código, REF, serie, marca, modelo y RFID. |
 | RF-07 | Préstamos | 🟡 | Modelo y API con permisos; interfaz con datos de ejemplo. Falta formulario, devolución e historial. |
 | RF-08 | Traslados formales | 🟡 | Modelo mínimo (pendiente/autorizado). Faltan condición, motivo, firmas, consecutivo y autorización. Interfaz simulada. |
 | RF-09 | Estatus y estado oficial | ⚠️ | Solo 3 estados (D2). |
@@ -68,7 +68,7 @@ RF-02 pide: **REF** (correlativo interno), **número de serie**, **marca**, **mo
 |---|---|---|---|
 | RNF-01 | Respuesta media < 300 ms | ❌ | Sin medición. Existe un `locustfile.py` con 3 escenarios. |
 | RNF-02 | ≥ 50 RPS sin degradar | ❌ | Sin medición. |
-| RNF-03 | Unicidad y campos obligatorios | 🟡 | Código y RFID únicos. Falta serie. |
+| RNF-03 | Unicidad y campos obligatorios | ✅ | Código, número de serie, REF y RFID únicos, con errores legibles. |
 | RNF-04 | Docker + Compose | ✅ | Los 3 servicios corren en Compose. Hoy en modo desarrollo (`runserver`, Vite dev), mientras el documento describe Nginx y Gunicorn (3.4.2): igualar documento o despliegue. |
 | RNF-05 | Diseño responsivo | ❌ | La interfaz es solo de escritorio, por decisión documentada. El documento promete móvil y tabletas. |
 | RNF-06 | Seguridad (JWT/Session, SQLi, XSS, CSRF) | 🟡 | Django ORM y React cubren SQLi/XSS; la autenticación es por **token**, no JWT ni sesión como dice el documento (ajustar redacción). **Los servidores usan HTTP**, y el acceso a la cámara desde el navegador exige HTTPS. |
@@ -94,7 +94,7 @@ SCRUM con sprints de 2–3 semanas y tablero Kanban en GitHub Projects/Trello: *
 1. Resolver D1–D4 con Laura y el asesor.
 2. Actualizar los ADR 0001 y 0002 y `CLAUDE.md`; corregir el documento teórico en lo que cambie.
 
-**Sprint 1 — Cerrar Activos** (RF-02, RF-04, RF-06, RNF-03)
+**Sprint 1 — Cerrar Activos** (RF-02, RF-04, RF-06, RNF-03) — *en curso: hecho todo salvo fotografías y `estatus`/`estado` (D2)*
 - Campos REF, serie, marca, modelo, tipo; fotografías; unicidad de serie.
 - `estatus` / `estado` según D2.
 - Editar activos; editar y borrar ubicaciones y categorías con mensajes claros.
