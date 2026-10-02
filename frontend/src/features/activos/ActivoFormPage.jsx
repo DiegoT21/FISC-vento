@@ -1,21 +1,36 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { ESTADO_ACTIVO, ORIGEN_ACTIVO } from "../../shared/utils/estado";
-import { crearActivo, crearCategoria, listarTodasCategorias } from "../../shared/api/activos";
+import { mensajeDeError } from "../../shared/utils/errores";
+import {
+  actualizarActivo,
+  crearActivo,
+  crearCategoria,
+  listarTodasCategorias,
+  obtenerActivo,
+} from "../../shared/api/activos";
 import { listarTodosDepartamentos } from "../../shared/api/ubicaciones";
 import { useApi } from "../../shared/hooks/useApi";
 import { useRole } from "../../shared/hooks/useRole";
 
 const VACIO = {
   codigo: "",
+  tag_rfid: "",
+  ref: "",
+  numero_serie: "",
   descripcion: "",
+  marca: "",
+  modelo: "",
   categoria: "",
   ubicacion: "",
   origen: "",
   estado: "ACTIVO",
-  tag_rfid: "",
 };
+
+// Convierte un activo de la API en valores de formulario (todo texto, sin null).
+const aFormulario = (a) =>
+  Object.fromEntries(Object.keys(VACIO).map((campo) => [campo, a[campo] == null ? "" : String(a[campo])]));
 
 const inputCls = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 outline-none focus:border-fisc-600";
 
@@ -36,10 +51,33 @@ function Campo({ label, requerido, error, ayuda, children }) {
 // Los errores de DRF llegan como { campo: ["mensaje", ...] }.
 const mensajeCampo = (errores, campo) => errores?.[campo]?.join(" ");
 
+// Carga el activo (si se edita) y monta el formulario ya con sus datos.
 export default function ActivoFormPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const existente = useApi(() => (id ? obtenerActivo(id) : Promise.resolve(null)), [id]);
+
+  if (id && (existente.cargando || existente.error || !existente.data)) {
+    return (
+      <div className="space-y-4">
+        <button type="button" onClick={() => navigate(`/dashboard/activos/${id}`)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+          <ChevronLeft size={16} /> Volver al activo
+        </button>
+        <p className="text-sm text-gray-500">
+          {existente.cargando ? "Cargando..." : mensajeDeError(existente.error, "No se pudo cargar el activo.")}
+        </p>
+      </div>
+    );
+  }
+
+  return <FormularioActivo key={id ?? "nuevo"} id={id} inicial={existente.data ? aFormulario(existente.data) : VACIO} />;
+}
+
+function FormularioActivo({ id, inicial }) {
+  const editando = Boolean(id);
   const navigate = useNavigate();
   const { role } = useRole();
-  const [form, setForm] = useState(VACIO);
+  const [form, setForm] = useState(inicial);
   const [errores, setErrores] = useState(null);
   const [errorGeneral, setErrorGeneral] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -51,6 +89,7 @@ export default function ActivoFormPage() {
   const departamentos = useApi(listarTodosDepartamentos, []);
 
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
+  const destino = editando ? `/dashboard/activos/${id}` : "/dashboard/activos";
 
   async function agregarCategoria() {
     setErrorCat("");
@@ -60,7 +99,7 @@ export default function ActivoFormPage() {
       setForm((f) => ({ ...f, categoria: String(nueva.id) }));
       setRecargaCat((n) => n + 1);
     } catch (err) {
-      setErrorCat(err.status === 400 && err.data ? Object.values(err.data).flat().join(" ") : "No se pudo crear la categoría.");
+      setErrorCat(mensajeDeError(err, "No se pudo crear la categoría."));
     }
   }
 
@@ -69,28 +108,30 @@ export default function ActivoFormPage() {
     setErrores(null);
     setErrorGeneral("");
     setGuardando(true);
+    const datos = {
+      ...form,
+      categoria: Number(form.categoria),
+      ubicacion: Number(form.ubicacion),
+      codigo: form.codigo.trim(),
+      descripcion: form.descripcion.trim(),
+      // Opcionales y únicos: vacío = sin valor (el servidor lo guarda como NULL).
+      tag_rfid: form.tag_rfid.trim() || null,
+      ref: form.ref.trim() || null,
+      numero_serie: form.numero_serie.trim() || null,
+    };
     try {
-      const activo = await crearActivo({
-        ...form,
-        categoria: Number(form.categoria),
-        ubicacion: Number(form.ubicacion),
-        // tag_rfid es único y admite NULL; un texto vacío chocaría entre activos.
-        tag_rfid: form.tag_rfid.trim() || null,
-        codigo: form.codigo.trim(),
-        descripcion: form.descripcion.trim(),
-      });
+      const activo = editando ? await actualizarActivo(id, datos) : await crearActivo(datos);
       navigate(`/dashboard/activos/${activo.id}`);
     } catch (err) {
       if (err.status === 400 && err.data) setErrores(err.data);
-      else if (err.status === 403) setErrorGeneral("No tienes permiso para registrar activos.");
-      else setErrorGeneral("No se pudo guardar el activo. Intenta de nuevo.");
+      else setErrorGeneral(mensajeDeError(err, "No se pudo guardar el activo. Intenta de nuevo."));
       setGuardando(false);
     }
   }
 
   const volver = (
-    <button type="button" onClick={() => navigate("/dashboard/activos")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
-      <ChevronLeft size={16} /> Volver al listado
+    <button type="button" onClick={() => navigate(destino)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+      <ChevronLeft size={16} /> {editando ? "Volver al activo" : "Volver al listado"}
     </button>
   );
 
@@ -98,7 +139,7 @@ export default function ActivoFormPage() {
     return (
       <div className="space-y-4">
         {volver}
-        <p className="text-sm text-gray-500">Tu rol no permite registrar activos.</p>
+        <p className="text-sm text-gray-500">Tu rol no permite {editando ? "editar" : "registrar"} activos.</p>
       </div>
     );
   }
@@ -110,7 +151,7 @@ export default function ActivoFormPage() {
     <div className="space-y-4 max-w-2xl">
       {volver}
       <div>
-        <h1 className="text-lg font-medium text-gray-900">Registrar activo</h1>
+        <h1 className="text-lg font-medium text-gray-900">{editando ? "Editar activo" : "Registrar activo"}</h1>
         <p className="text-sm text-gray-500">Los campos con * son obligatorios.</p>
       </div>
 
@@ -122,8 +163,14 @@ export default function ActivoFormPage() {
 
       <form onSubmit={enviar} className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Campo label="Código" requerido error={mensajeCampo(errores, "codigo")} ayuda="Código interno de inventario, p. ej. SVT-118423.">
+          <Campo label="Código" requerido error={mensajeCampo(errores, "codigo")} ayuda="Número de activo / Servitac (placa), p. ej. SVT-118423.">
             <input required maxLength={50} value={form.codigo} onChange={set("codigo")} className={`${inputCls} font-mono`} />
+          </Campo>
+          <Campo label="REF" error={mensajeCampo(errores, "ref")} ayuda="Correlativo interno. Opcional.">
+            <input maxLength={50} value={form.ref} onChange={set("ref")} className={`${inputCls} font-mono`} />
+          </Campo>
+          <Campo label="Número de serie" error={mensajeCampo(errores, "numero_serie")} ayuda="Opcional, no puede repetirse.">
+            <input maxLength={100} value={form.numero_serie} onChange={set("numero_serie")} className={`${inputCls} font-mono`} />
           </Campo>
           <Campo label="Tag RFID" error={mensajeCampo(errores, "tag_rfid")} ayuda="Opcional. Déjalo vacío si el activo no tiene etiqueta.">
             <input maxLength={100} value={form.tag_rfid} onChange={set("tag_rfid")} className={`${inputCls} font-mono`} />
@@ -135,6 +182,12 @@ export default function ActivoFormPage() {
         </Campo>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Campo label="Marca" error={mensajeCampo(errores, "marca")}>
+            <input maxLength={100} value={form.marca} onChange={set("marca")} className={inputCls} />
+          </Campo>
+          <Campo label="Modelo" error={mensajeCampo(errores, "modelo")}>
+            <input maxLength={100} value={form.modelo} onChange={set("modelo")} className={inputCls} />
+          </Campo>
           <Campo label="Categoría" requerido error={mensajeCampo(errores, "categoria")}>
             <select required value={form.categoria} onChange={set("categoria")} disabled={cargandoListas} className={inputCls}>
               <option value="">Selecciona...</option>
@@ -212,11 +265,11 @@ export default function ActivoFormPage() {
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={() => navigate("/dashboard/activos")} className="text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+          <button type="button" onClick={() => navigate(destino)} className="text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
             Cancelar
           </button>
           <button type="submit" disabled={guardando || cargandoListas} className="bg-fisc-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
-            {guardando ? "Guardando..." : "Registrar activo"}
+            {guardando ? "Guardando..." : editando ? "Guardar cambios" : "Registrar activo"}
           </button>
         </div>
       </form>

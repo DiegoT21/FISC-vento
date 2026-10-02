@@ -1,23 +1,29 @@
 import { useState } from "react";
-import { MapPin } from "lucide-react";
-import { crearDepartamento, crearUbicacion, listarTodosDepartamentos } from "../../shared/api/ubicaciones";
+import { MapPin, Pencil, Trash2 } from "lucide-react";
+import {
+  crearDepartamento,
+  crearUbicacion,
+  eliminarDepartamento,
+  eliminarUbicacion,
+  listarTodosDepartamentos,
+  renombrarDepartamento,
+  renombrarUbicacion,
+} from "../../shared/api/ubicaciones";
+import { mensajeDeError } from "../../shared/utils/errores";
 import { useApi } from "../../shared/hooks/useApi";
 import { useRole } from "../../shared/hooks/useRole";
 
 const inputCls = "text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-800 outline-none focus:border-fisc-600";
 
-// Los errores de DRF llegan como { campo: ["mensaje"] }; lo mostramos tal cual.
 function mensajeError(err) {
   // unique_together (departamento, nombre) llega como non_field_errors.
   if (err.status === 400 && err.data?.non_field_errors) return "Ya existe una ubicación con ese nombre en este departamento.";
-  if (err.status === 400 && err.data) return Object.values(err.data).flat().join(" ");
-  if (err.status === 403) return "No tienes permiso para hacer esto.";
-  return "No se pudo guardar. Intenta de nuevo.";
+  return mensajeDeError(err, "No se pudo guardar. Intenta de nuevo.");
 }
 
 // Input con botones para crear un nombre nuevo; `onCrear` devuelve una promesa.
-function FormNombre({ placeholder, etiquetaBoton, onCrear, onCancelar }) {
-  const [nombre, setNombre] = useState("");
+function FormNombre({ placeholder, etiquetaBoton, onCrear, onCancelar, inicial = "" }) {
+  const [nombre, setNombre] = useState(inicial);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -34,7 +40,7 @@ function FormNombre({ placeholder, etiquetaBoton, onCrear, onCancelar }) {
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-1">
+    <form onSubmit={enviar} className="space-y-1 flex-1">
       <div className="flex gap-2">
         <input autoFocus required maxLength={150} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={placeholder} className={`${inputCls} flex-1`} />
         <button type="submit" disabled={guardando} className="bg-fisc-800 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
@@ -49,17 +55,87 @@ function FormNombre({ placeholder, etiquetaBoton, onCrear, onCancelar }) {
   );
 }
 
+// Nombre de un departamento o ubicación, con sus acciones de renombrar y
+// eliminar (solo el Administrador). `clave` es "d:<id>" o "u:<id>".
+function FilaNombre({ clave, nombre, icono, claseTexto, puedeEditar, estado, acciones, detalleBorrado }) {
+  const { editando, setEditando, confirmando, setConfirmando, errorBorrado, setErrorBorrado } = estado;
+
+  if (editando === clave) {
+    return (
+      <FormNombre
+        inicial={nombre}
+        placeholder="Nombre"
+        etiquetaBoton="Guardar"
+        onCancelar={() => setEditando(null)}
+        onCrear={(nuevo) => acciones.renombrar(clave, nuevo)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex-1">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`flex items-center gap-2 ${claseTexto}`}>
+          {icono} {nombre}
+        </span>
+        {puedeEditar && confirmando !== clave && (
+          <span className="flex items-center gap-1 text-gray-400">
+            <button onClick={() => { setEditando(clave); setConfirmando(null); }} title="Renombrar" aria-label={`Renombrar ${nombre}`} className="p-1 rounded hover:bg-gray-100 hover:text-gray-700">
+              <Pencil size={14} />
+            </button>
+            <button onClick={() => { setConfirmando(clave); setErrorBorrado(""); setEditando(null); }} title="Eliminar" aria-label={`Eliminar ${nombre}`} className="p-1 rounded hover:bg-red-50 hover:text-red-700">
+              <Trash2 size={14} />
+            </button>
+          </span>
+        )}
+      </div>
+      {confirmando === clave && (
+        <div className="mt-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-sm text-red-800 flex items-center justify-between gap-3 flex-wrap">
+          <span>¿Eliminar «{nombre}»?{detalleBorrado}</span>
+          <span className="flex gap-2">
+            <button onClick={() => acciones.borrar(clave)} className="bg-red-700 text-white px-3 py-1 rounded-lg hover:bg-red-800">Sí, eliminar</button>
+            <button onClick={() => { setConfirmando(null); setErrorBorrado(""); }} className="px-3 py-1 rounded-lg border border-red-200 bg-white text-gray-700">Cancelar</button>
+          </span>
+        </div>
+      )}
+      {confirmando === clave && errorBorrado && <p className="mt-1 text-xs text-red-700">{errorBorrado}</p>}
+    </div>
+  );
+}
+
 export default function UbicacionesPage() {
   const { role } = useRole();
   const puedeEditar = role === "Administrador";
   const [recarga, setRecarga] = useState(0);
   const [nuevoDepto, setNuevoDepto] = useState(false);
   const [deptoAbierto, setDeptoAbierto] = useState(null); // id del depto con el form de ubicación abierto
+  const [editando, setEditando] = useState(null);
+  const [confirmando, setConfirmando] = useState(null);
+  const [errorBorrado, setErrorBorrado] = useState("");
 
   const { data, error, cargando } = useApi(listarTodosDepartamentos, [recarga]);
   const departamentos = data ?? [];
 
   const refrescar = () => setRecarga((n) => n + 1);
+  const estado = { editando, setEditando, confirmando, setConfirmando, errorBorrado, setErrorBorrado };
+  const acciones = {
+    async renombrar(clave, nombre) {
+      const [tipo, id] = clave.split(":");
+      await (tipo === "d" ? renombrarDepartamento : renombrarUbicacion)(id, nombre);
+      setEditando(null);
+      refrescar();
+    },
+    async borrar(clave) {
+      const [tipo, id] = clave.split(":");
+      try {
+        await (tipo === "d" ? eliminarDepartamento : eliminarUbicacion)(id);
+        setConfirmando(null);
+        refrescar();
+      } catch (err) {
+        setErrorBorrado(mensajeDeError(err, "No se pudo eliminar."));
+      }
+    },
+  };
 
   return (
     <div className="space-y-4">
@@ -105,16 +181,33 @@ export default function UbicacionesPage() {
       <div className="space-y-3">
         {departamentos.map((d) => (
           <div key={d.id} className="bg-white rounded-lg border border-gray-200">
-            <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-800">{d.nombre}</span>
-              {puedeEditar && deptoAbierto !== d.id && (
-                <button onClick={() => setDeptoAbierto(d.id)} className="text-sm text-fisc-800 hover:underline">+ Agregar ubicación</button>
+            <div className="px-4 py-2.5 border-b border-gray-100 flex items-start justify-between gap-3">
+              <FilaNombre
+                clave={`d:${d.id}`}
+                nombre={d.nombre}
+                claseTexto="text-sm font-medium text-gray-800"
+                puedeEditar={puedeEditar}
+                estado={estado}
+                acciones={acciones}
+                detalleBorrado=" Solo se puede si no tiene ubicaciones en uso."
+              />
+              {puedeEditar && deptoAbierto !== d.id && editando !== `d:${d.id}` && confirmando !== `d:${d.id}` && (
+                <button onClick={() => setDeptoAbierto(d.id)} className="text-sm text-fisc-800 hover:underline whitespace-nowrap">+ Agregar ubicación</button>
               )}
             </div>
             <div className="divide-y divide-gray-100">
               {d.ubicaciones.map((u) => (
-                <div key={u.id} className="px-4 py-2 text-sm text-gray-600 flex items-center gap-2">
-                  <MapPin size={13} className="text-gray-400" /> {u.nombre}
+                <div key={u.id} className="px-4 py-2 text-sm text-gray-600">
+                  <FilaNombre
+                    clave={`u:${u.id}`}
+                    nombre={u.nombre}
+                    icono={<MapPin size={13} className="text-gray-400" />}
+                    claseTexto=""
+                    puedeEditar={puedeEditar}
+                    estado={estado}
+                    acciones={acciones}
+                    detalleBorrado=" Solo se puede si no tiene activos asignados."
+                  />
                 </div>
               ))}
               {d.ubicaciones.length === 0 && deptoAbierto !== d.id && (

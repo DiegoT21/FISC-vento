@@ -1,4 +1,4 @@
-import { get, post } from "./client";
+import { del, get, getBlob, patch, post } from "./client";
 import { ENDPOINTS } from "./endpoints";
 import { listarTodos } from "./listarTodos";
 
@@ -22,3 +22,10 @@ export const crearActivo = (datos) => post(ENDPOINTS.ACTIVOS, datos);
 export const crearCategoria = (nombre) => post(`${ENDPOINTS.ACTIVOS}categorias/`, { nombre });
 
 export const listarTodasCategorias = () => listarTodos(`${ENDPOINTS.ACTIVOS}categorias/`);
+
+export const actualizarActivo = (id, datos) => patch(`${ENDPOINTS.ACTIVOS}${id}/`, datos);
+
+export const eliminarActivo = (id) => del(`${ENDPOINTS.ACTIVOS}${id}/`);
+
+// Imagen PNG del código de barras de un activo (para imprimir la etiqueta).
+export const obtenerCodigoBarras = (id) => getBlob(`${ENDPOINTS.ESCANEO}activos/${id}/barras/`);

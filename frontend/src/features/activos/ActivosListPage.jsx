@@ -1,20 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import Badge from "../../shared/components/Badge";
-import { ESTADO_ACTIVO, estadoTone } from "../../shared/utils/estado";
+import { ESTADO_ACTIVO, ORIGEN_ACTIVO, estadoTone } from "../../shared/utils/estado";
 import { listarActivos, listarTodasCategorias } from "../../shared/api/activos";
+import { listarTodosDepartamentos } from "../../shared/api/ubicaciones";
 import { useApi } from "../../shared/hooks/useApi";
 import { useRole } from "../../shared/hooks/useRole";
 
 const PAGE_SIZE = 25;
+const SIN_FILTROS = { categoria: "", estado: "", origen: "", ubicacion: "" };
+const selectCls = "text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700";
 
 export default function ActivosListPage() {
   const navigate = useNavigate();
   const { role } = useRole();
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const [cat, setCat] = useState("");
+  const [filtros, setFiltros] = useState(SIN_FILTROS);
   const [page, setPage] = useState(1);
 
   // Espera a que el usuario deje de teclear antes de consultar la API.
@@ -27,14 +30,27 @@ export default function ActivosListPage() {
   }, [q]);
 
   const categorias = useApi(listarTodasCategorias, []);
+  const departamentos = useApi(listarTodosDepartamentos, []);
   const { data, error, cargando } = useApi(
-    () => listarActivos({ search: busqueda, categoria: cat, page }),
-    [busqueda, cat, page]
+    () => listarActivos({ search: busqueda, ...filtros, page }),
+    [busqueda, filtros, page]
   );
 
   const activos = data?.results ?? [];
   const total = data?.count ?? 0;
   const paginas = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const hayFiltros = busqueda !== "" || Object.values(filtros).some((v) => v !== "");
+
+  const cambiarFiltro = (campo) => (e) => {
+    setFiltros((f) => ({ ...f, [campo]: e.target.value }));
+    setPage(1);
+  };
+  const limpiar = () => {
+    setQ("");
+    setBusqueda("");
+    setFiltros(SIN_FILTROS);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -47,25 +63,49 @@ export default function ActivosListPage() {
           <button onClick={() => navigate("/dashboard/activos/nuevo")} className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900">+ Registrar activo</button>
         )}
       </div>
-      <div className="flex gap-2">
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 flex-1">
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
           <Search size={15} className="text-gray-400" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por descripción o código..." className="text-sm outline-none w-full text-gray-700" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por descripción, código, REF, serie, marca o modelo..." className="text-sm outline-none w-full text-gray-700" />
         </div>
-        <select
-          value={cat}
-          onChange={(e) => {
-            setCat(e.target.value);
-            setPage(1);
-          }}
-          className="text-sm border border-gray-200 rounded-lg px-3 bg-white text-gray-700"
-        >
-          <option value="">Todas</option>
-          {(categorias.data ?? []).map((c) => (
-            <option key={c.id} value={c.id}>{c.nombre}</option>
-          ))}
-        </select>
+        <div className="flex gap-2 flex-wrap">
+          <select value={filtros.categoria} onChange={cambiarFiltro("categoria")} className={selectCls} aria-label="Categoría">
+            <option value="">Todas las categorías</option>
+            {(categorias.data ?? []).map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+          <select value={filtros.estado} onChange={cambiarFiltro("estado")} className={selectCls} aria-label="Estado">
+            <option value="">Todos los estados</option>
+            {Object.entries(ESTADO_ACTIVO).map(([valor, texto]) => (
+              <option key={valor} value={valor}>{texto}</option>
+            ))}
+          </select>
+          <select value={filtros.origen} onChange={cambiarFiltro("origen")} className={selectCls} aria-label="Origen">
+            <option value="">Cualquier origen</option>
+            {Object.entries(ORIGEN_ACTIVO).map(([valor, texto]) => (
+              <option key={valor} value={valor}>{texto}</option>
+            ))}
+          </select>
+          <select value={filtros.ubicacion} onChange={cambiarFiltro("ubicacion")} className={selectCls} aria-label="Ubicación">
+            <option value="">Todas las ubicaciones</option>
+            {(departamentos.data ?? []).map((d) => (
+              <optgroup key={d.id} label={d.nombre}>
+                {d.ubicaciones.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nombre}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          {hayFiltros && (
+            <button onClick={limpiar} className="inline-flex items-center gap-1 text-sm px-3 py-2 text-gray-600 hover:text-gray-900">
+              <X size={14} /> Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
+
       {error && (
         <p className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
           No se pudieron cargar los activos. Intenta de nuevo.
@@ -93,7 +133,11 @@ export default function ActivosListPage() {
               </tr>
             ))}
             {!cargando && !error && activos.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">No hay activos que coincidan.</td></tr>
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                  {hayFiltros ? "Ningún activo coincide con los filtros." : "Aún no hay activos registrados."}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

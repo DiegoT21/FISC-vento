@@ -25,6 +25,7 @@ export const router = createBrowserRouter([
       { path: "activos", element: <ActivosListPage /> },
       { path: "activos/nuevo", element: <ActivoFormPage /> },
       { path: "activos/:id", element: <ActivoDetailPage /> },
+      { path: "activos/:id/editar", element: <ActivoFormPage /> },
       { path: "ubicaciones", element: <UbicacionesPage /> },
       { path: "escaneo", element: <EscaneoPage /> },
       { path: "auditoria", element: <AuditoriaPage /> },

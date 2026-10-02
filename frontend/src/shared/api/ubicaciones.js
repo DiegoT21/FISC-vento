@@ -1,9 +1,15 @@
-import { post } from "./client";
+import { del, patch, post } from "./client";
 import { ENDPOINTS } from "./endpoints";
 import { listarTodos } from "./listarTodos";
 
-export const listarTodosDepartamentos = () => listarTodos(`${ENDPOINTS.UBICACIONES}departamentos/`);
+const DEPARTAMENTOS = `${ENDPOINTS.UBICACIONES}departamentos/`;
 
-export const crearDepartamento = (nombre) => post(`${ENDPOINTS.UBICACIONES}departamentos/`, { nombre });
+export const listarTodosDepartamentos = () => listarTodos(DEPARTAMENTOS);
+
+export const crearDepartamento = (nombre) => post(DEPARTAMENTOS, { nombre });
+export const renombrarDepartamento = (id, nombre) => patch(`${DEPARTAMENTOS}${id}/`, { nombre });
+export const eliminarDepartamento = (id) => del(`${DEPARTAMENTOS}${id}/`);
 
 export const crearUbicacion = (departamento, nombre) => post(ENDPOINTS.UBICACIONES, { departamento, nombre });
+export const renombrarUbicacion = (id, nombre) => patch(`${ENDPOINTS.UBICACIONES}${id}/`, { nombre });
+export const eliminarUbicacion = (id) => del(`${ENDPOINTS.UBICACIONES}${id}/`);

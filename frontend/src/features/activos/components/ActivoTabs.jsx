@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeftRight, Clock, Paperclip } from "lucide-react";
 import { ORIGEN_ACTIVO } from "../../../shared/utils/estado";
+import EtiquetaCodigoBarras from "./EtiquetaCodigoBarras";
 
 const TABS = [
   ["info", "Información"],
@@ -26,12 +27,19 @@ export default function ActivoTabs({ activo }) {
       </div>
 
       {tab === "info" && (
-        <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
-          <div><p className="text-gray-400 text-xs">Categoría</p><p className="text-gray-800">{activo.categoria_nombre}</p></div>
-          <div><p className="text-gray-400 text-xs">Origen</p><p className="text-gray-800">{ORIGEN_ACTIVO[activo.origen] ?? "—"}</p></div>
-          <div><p className="text-gray-400 text-xs">Ubicación</p><p className="text-gray-800">{activo.departamento_nombre} / {activo.ubicacion_nombre}</p></div>
-          <div><p className="text-gray-400 text-xs">Tag RFID</p><p className="text-gray-800 font-mono text-xs">{activo.tag_rfid || "Sin etiqueta"}</p></div>
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
+            <div><p className="text-gray-400 text-xs">Categoría</p><p className="text-gray-800">{activo.categoria_nombre}</p></div>
+            <div><p className="text-gray-400 text-xs">Origen</p><p className="text-gray-800">{ORIGEN_ACTIVO[activo.origen] ?? "—"}</p></div>
+            <div><p className="text-gray-400 text-xs">Ubicación</p><p className="text-gray-800">{activo.departamento_nombre} / {activo.ubicacion_nombre}</p></div>
+            <div><p className="text-gray-400 text-xs">Tag RFID</p><p className="text-gray-800 font-mono text-xs">{activo.tag_rfid || "Sin etiqueta"}</p></div>
+            <div><p className="text-gray-400 text-xs">REF</p><p className="text-gray-800 font-mono text-xs">{activo.ref || "—"}</p></div>
+            <div><p className="text-gray-400 text-xs">Número de serie</p><p className="text-gray-800 font-mono text-xs">{activo.numero_serie || "—"}</p></div>
+            <div><p className="text-gray-400 text-xs">Marca</p><p className="text-gray-800">{activo.marca || "—"}</p></div>
+            <div><p className="text-gray-400 text-xs">Modelo</p><p className="text-gray-800">{activo.modelo || "—"}</p></div>
+          </div>
+          <EtiquetaCodigoBarras key={`${activo.id}-${activo.codigo}`} activo={activo} />
+        </>
       )}
       {tab === "historial" && (
         <div className="mt-4 space-y-2">
