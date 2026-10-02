@@ -18,8 +18,17 @@ async function request(path, { method = "GET", body, headers, ...rest } = {}) {
   });
 
   if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    throw new Error(`API request failed (${response.status} ${response.statusText})${message ? `: ${message}` : ""}`);
+    const text = await response.text().catch(() => "");
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // cuerpo no JSON (p. ej. página HTML de error del servidor)
+    }
+    const error = new Error(`API request failed (${response.status} ${response.statusText})${text ? `: ${text}` : ""}`);
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   if (response.status === 204) return null;

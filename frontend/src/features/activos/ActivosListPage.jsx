@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import Badge from "../../shared/components/Badge";
 import { ESTADO_ACTIVO, estadoTone } from "../../shared/utils/estado";
-import { listarActivos, listarCategorias } from "../../shared/api/activos";
+import { listarActivos, listarTodasCategorias } from "../../shared/api/activos";
 import { useApi } from "../../shared/hooks/useApi";
+import { useRole } from "../../shared/hooks/useRole";
 
 const PAGE_SIZE = 25;
 
 export default function ActivosListPage() {
   const navigate = useNavigate();
+  const { role } = useRole();
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [cat, setCat] = useState("");
@@ -24,7 +26,7 @@ export default function ActivosListPage() {
     return () => clearTimeout(t);
   }, [q]);
 
-  const categorias = useApi(listarCategorias, []);
+  const categorias = useApi(listarTodasCategorias, []);
   const { data, error, cargando } = useApi(
     () => listarActivos({ search: busqueda, categoria: cat, page }),
     [busqueda, cat, page]
@@ -41,7 +43,9 @@ export default function ActivosListPage() {
           <h1 className="text-lg font-medium text-gray-900">Activos</h1>
           <p className="text-sm text-gray-500">{cargando && !data ? "Cargando..." : `${total} activos`}</p>
         </div>
-        <button className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900">+ Registrar activo</button>
+        {role !== "Auditor" && (
+          <button onClick={() => navigate("/dashboard/activos/nuevo")} className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900">+ Registrar activo</button>
+        )}
       </div>
       <div className="flex gap-2">
         <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 flex-1">
@@ -57,7 +61,7 @@ export default function ActivosListPage() {
           className="text-sm border border-gray-200 rounded-lg px-3 bg-white text-gray-700"
         >
           <option value="">Todas</option>
-          {(categorias.data?.results ?? []).map((c) => (
+          {(categorias.data ?? []).map((c) => (
             <option key={c.id} value={c.id}>{c.nombre}</option>
           ))}
         </select>
