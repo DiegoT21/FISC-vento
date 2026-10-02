@@ -117,5 +117,6 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_THROTTLE_RATES": {"login": "10/min"},
     "PAGE_SIZE": 25,
 }
