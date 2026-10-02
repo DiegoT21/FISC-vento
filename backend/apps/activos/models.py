@@ -32,9 +32,10 @@ class Categoria(models.Model):
 
 class Activo(models.Model):
     codigo = models.CharField(
-        max_length=50, unique=True, help_text="Código interno de inventario (p. ej. SVT-118423)."
+        "código", max_length=50, unique=True, help_text="Código interno de inventario (p. ej. SVT-118423)."
     )
     tag_rfid = models.CharField(
+        "tag RFID",
         max_length=100,
         unique=True,
         null=True,
@@ -43,6 +44,7 @@ class Activo(models.Model):
     )
     descripcion = models.CharField(max_length=255)
     ref = models.CharField(
+        "REF",
         max_length=50,
         unique=True,
         null=True,
@@ -50,6 +52,7 @@ class Activo(models.Model):
         help_text="Número REF (correlativo interno), si el activo lo tiene.",
     )
     numero_serie = models.CharField(
+        "número de serie",
         max_length=100,
         unique=True,
         null=True,

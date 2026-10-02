@@ -309,7 +309,8 @@ class BorradoProtegidoTests(APITestCase):
     def test_categoria_en_uso_responde_409_con_mensaje(self):
         r = self.client.delete(f"{URL}categorias/{self.categoria.id}/")
         self.assertEqual(r.status_code, 409)
-        self.assertIn("1 activos", r.data["detail"])
+        self.assertIn("1 activo", r.data["detail"])
+        self.assertNotIn("1 activos", r.data["detail"])
         self.assertTrue(Categoria.objects.filter(pk=self.categoria.pk).exists())
 
     def test_ubicacion_en_uso_responde_409(self):
@@ -331,7 +332,7 @@ class BorradoProtegidoTests(APITestCase):
         Prestamo.objects.create(activo=self.activo, prestado_a=self.admin)
         r = self.client.delete(f"{URL}{self.activo.id}/")
         self.assertEqual(r.status_code, 409)
-        self.assertIn("préstamos", r.data["detail"])
+        self.assertIn("1 préstamo", r.data["detail"])
 
 
 class CodigoDeBarrasEndpointTests(APITestCase):
