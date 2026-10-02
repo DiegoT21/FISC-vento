@@ -1,3 +1,4 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
 
 from .models import Activo, Categoria
@@ -10,8 +11,11 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 
 
 class ActivoViewSet(viewsets.ModelViewSet):
-    queryset = Activo.objects.select_related("categoria", "ubicacion", "responsable").all()
+    queryset = Activo.objects.select_related(
+        "categoria", "ubicacion__departamento", "responsable"
+    ).all()
     serializer_class = ActivoSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["categoria", "estado", "ubicacion", "origen"]
     search_fields = ["codigo", "descripcion"]
     ordering_fields = ["codigo", "creado_en", "estado"]

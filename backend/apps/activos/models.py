@@ -15,6 +15,11 @@ class EstadoActivo(models.TextChoices):
     INOPERATIVO = "INOPERATIVO", "Inoperativo"
 
 
+class OrigenActivo(models.TextChoices):
+    COMPRADO = "COMPRADO", "Comprado"
+    DONADO = "DONADO", "Donado"
+
+
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
 
@@ -46,6 +51,12 @@ class Activo(models.Model):
         null=True,
         blank=True,
         related_name="activos_asignados",
+    )
+    origen = models.CharField(
+        max_length=20,
+        choices=OrigenActivo.choices,
+        blank=True,
+        help_text="Cómo ingresó el activo a la facultad (opcional).",
     )
     estado = models.CharField(
         max_length=20, choices=EstadoActivo.choices, default=EstadoActivo.ACTIVO
