@@ -1,8 +1,10 @@
-name: Pipeline (develop -> staging -> main -> producción)
+name: Pipeline (develop -> staging)
 
-# Único punto de entrada del despliegue continuo: un push a develop corre
-# toda la cadena. Si cualquier job falla, los siguientes no se ejecutan
-# (así que producción nunca recibe algo que no pasó por staging primero).
+# Un push a develop corre tests y despliega SOLO a staging, con sus smoke
+# tests. Producción ya no se alcanza desde aquí: se promueve a mano con el
+# workflow "Promover a producción" (deploy-production.yml), que exige que
+# este mismo commit haya pasado staging y que alguien apruebe el entorno
+# "production" en GitHub.
 on:
   push:
     branches: [develop]
@@ -105,111 +107,6 @@ jobs:
       - name: Smoke test de navegador (staging) — errores de consola / pantalla en blanco
         env:
           CHECK_HOST: ${{ secrets.STAGING_HOST }}
-        run: |
-          npm init -y > /dev/null 2>&1
-          npm install playwright@1.47.0 > /dev/null 2>&1
-          npx playwright install --with-deps chromium
-          cat > check.js <<'EOF'
-          const { chromium } = require('playwright');
-          (async () => {
-            const host = process.env.CHECK_HOST;
-            const url = `http://${host}:5173/`;
-            const browser = await chromium.launch();
-            const page = await browser.newPage();
-            const errors = [];
-            page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
-            page.on('pageerror', err => errors.push(err.message));
-            let loadOk = true;
-            try {
-              await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
-            } catch (e) {
-              loadOk = false;
-              errors.push(`Fallo al cargar ${url}: ${e.message}`);
-            }
-            const bodyText = await page.evaluate(() => document.body.innerText || '');
-            if (!loadOk || bodyText.trim().length === 0) {
-              errors.push('La página cargó pero el <body> está vacío (posible pantalla en blanco).');
-            }
-            await browser.close();
-            if (errors.length > 0) {
-              console.error('Errores encontrados en ' + url + ':');
-              errors.forEach(e => console.error(' - ' + e));
-              process.exit(1);
-            }
-            console.log(`OK: ${url} cargó sin errores de consola y con contenido visible.`);
-          })();
-          EOF
-          node check.js
-
-  promote-to-main:
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-      - name: Mergear develop en main
-        run: |
-          set -e
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin develop
-          git merge origin/develop --no-ff -m "auto-merge: develop -> main (pipeline, tras pasar staging)"
-          git push origin main
-
-  deploy-production:
-    needs: promote-to-main
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 15
-    steps:
-      - name: Desplegar en producción por SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ubuntu
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            set -e
-            cd FISC-vento
-            git fetch origin
-            git checkout main
-            git reset --hard origin/main
-            sudo docker compose up -d --build
-            sudo docker compose exec -T backend python manage.py migrate --noinput
-
-      - name: Smoke test HTTP (producción)
-        run: |
-          set -e
-          HOST="${{ secrets.PROD_HOST }}"
-          check() {
-            url="$1"; name="$2"; shift 2; expected_codes="$*"
-            for i in 1 2 3 4 5 6; do
-              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
-              for ok in $expected_codes; do
-                [ "$code" = "$ok" ] && echo "OK  $name -> HTTP $code" && return 0
-              done
-              echo "  intento $i: $name -> HTTP $code (esperaba $expected_codes), reintentando..."
-              sleep 5
-            done
-            echo "FALLO $name -> HTTP $code (esperaba $expected_codes)"; return 1
-          }
-          fail=0
-          check "http://${HOST}:5173/" "Frontend" 200 || fail=1
-          check "http://${HOST}:8000/admin/login/" "Backend admin" 200 || fail=1
-          check "http://${HOST}:8000/api/activos/" "Backend API" 200 403 || fail=1
-          [ "$fail" -eq 1 ] && exit 1 || echo "Smoke test HTTP OK"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Smoke test de navegador (producción) — errores de consola / pantalla en blanco
-        env:
-          CHECK_HOST: ${{ secrets.PROD_HOST }}
         run: |
           npm init -y > /dev/null 2>&1
           npm install playwright@1.47.0 > /dev/null 2>&1

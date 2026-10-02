@@ -1,10 +1,11 @@
+import { useState } from "react";
 import ErrorState from "../../shared/components/ErrorState";
-import { getResumen } from "../../shared/api/activos";
+import { obtenerDistribucion } from "../../shared/api/reportes";
 import { useApi } from "../../shared/hooks/useApi";
-import { ESTADOS } from "../../shared/utils/estado";
+import { ESTADO_ACTIVO } from "../../shared/utils/estado";
 
-// Un color por estado, coherente con los badges: verde de marca / gris / rojo.
-const COLOR_ESTADO = { ACTIVO: "#0d6936", INACTIVO: "#94a3b8", INOPERATIVO: "#dc2626" };
+// Un color por estado, coherente con los badges: verde de marca / ámbar / rojo.
+const COLOR_ESTADO = { ACTIVO: "#0d6936", INACTIVO: "#f59e0b", INOPERATIVO: "#dc2626" };
 
 const fmt = (n) => (n ?? 0).toLocaleString("es-PA");
 
@@ -49,7 +50,7 @@ function Dona({ por_estado, total }) {
         {Object.entries(por_estado).map(([estado, n]) => (
           <li key={estado} className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLOR_ESTADO[estado] }} />
-            <span className="text-slate-700 flex-1">{ESTADOS[estado].label}</span>
+            <span className="text-slate-700 flex-1">{ESTADO_ACTIVO[estado]}</span>
             <span className="font-semibold text-slate-900 tabular-nums">{fmt(n)}</span>
             <span className="text-xs text-slate-500 tabular-nums w-10 text-right">{total ? Math.round((n / total) * 100) : 0}%</span>
           </li>
@@ -80,7 +81,8 @@ function Barras({ filas, vacio }) {
 }
 
 export default function ReportesPage() {
-  const { data, loading, error, reload } = useApi(getResumen, []);
+  const [recarga, setRecarga] = useState(0);
+  const { data, cargando, error } = useApi(obtenerDistribucion, [recarga]);
 
   return (
     <div className="space-y-5">
@@ -90,8 +92,8 @@ export default function ReportesPage() {
       </div>
 
       {error ? (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm"><ErrorState onRetry={reload} /></div>
-      ) : loading || !data ? (
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm"><ErrorState onRetry={() => setRecarga((n) => n + 1)} /></div>
+      ) : cargando || !data ? (
         <div className="grid gap-4 lg:grid-cols-2" aria-busy="true">
           {[0, 1, 2].map((i) => <div key={i} className="h-56 rounded-xl bg-white border border-slate-200/80 animate-pulse" />)}
         </div>

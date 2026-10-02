@@ -3,13 +3,11 @@
 
 export const ENDPOINTS = {
   ACTIVOS: "/api/activos/",
-  CATEGORIAS: "/api/activos/categorias/",
   UBICACIONES: "/api/ubicaciones/",
-  DEPARTAMENTOS: "/api/ubicaciones/departamentos/",
   ESCANEO: "/api/escaneo/",
   PRESTAMOS: "/api/prestamos/",
   TRASLADOS: "/api/traslados/",
   AUDITORIA: "/api/auditoria/",
+  REPORTES: "/api/reportes/",
   USUARIOS: "/api/usuarios/",
-  REPORTES_RESUMEN: "/api/reportes/resumen/",
 };

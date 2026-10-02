@@ -1,28 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-// Carga datos de la API y expone { data, loading, error, reload }.
-// `fetcher` debe ser estable (useCallback) o recibirse con `deps` explícitas.
-export function useApi(fetcher, deps = []) {
-  const [state, setState] = useState({ data: null, loading: true, error: null });
-  const seq = useRef(0);
+// Ejecuta `fn` cuando cambian `deps` y expone { data, error, cargando }.
+// Descarta respuestas de peticiones viejas (búsqueda al teclear).
+export function useApi(fn, deps) {
+  const [estado, setEstado] = useState({ data: null, error: null, cargando: true });
 
-  const run = useCallback(() => {
-    const id = ++seq.current;
-    setState((s) => ({ ...s, loading: true, error: null }));
-    fetcher()
-      .then((data) => id === seq.current && setState({ data, loading: false, error: null }))
-      .catch((error) => id === seq.current && setState({ data: null, loading: false, error }));
+  useEffect(() => {
+    let vigente = true;
+    setEstado((s) => ({ ...s, cargando: true, error: null }));
+    fn()
+      .then((data) => vigente && setEstado({ data, error: null, cargando: false }))
+      .catch((error) => vigente && setEstado({ data: null, error, cargando: false }));
+    return () => {
+      vigente = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  useEffect(() => {
-    const contador = seq;
-    run();
-    // Invalida la respuesta en vuelo si el componente se desmonta o cambian las dependencias.
-    return () => {
-      contador.current++;
-    };
-  }, [run]);
-
-  return { ...state, reload: run };
+  return estado;
 }

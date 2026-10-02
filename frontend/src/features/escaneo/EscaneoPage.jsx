@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Barcode, Radio, CheckCircle2, ScanLine, SearchX, ChevronRight } from "lucide-react";
-import { listActivos } from "../../shared/api/activos";
+import { listarActivos } from "../../shared/api/activos";
 import { escanear } from "../../shared/api/escaneo";
 
 const MODOS = [
@@ -43,7 +43,7 @@ export default function EscaneoPage() {
   async function simular() {
     setBuscando(true);
     try {
-      const { results } = await listActivos();
+      const { results } = await listarActivos();
       setResultado(results.length ? { activo: results[Math.floor(Math.random() * results.length)] } : { noEncontrado: "—" });
     } finally {
       setBuscando(false);

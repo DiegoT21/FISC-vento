@@ -1,6 +1,15 @@
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *  # noqa: F401,F403
+
+# base.py cae a una clave de desarrollo si falta la variable; en producción eso
+# permitiría falsificar sesiones y tokens firmados, así que no se arranca.
+if len(SECRET_KEY) < 50 or SECRET_KEY.startswith(("insecure", "django-insecure", "change-me")):  # noqa: F405
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY no está definida o es demasiado débil (mínimo 50 caracteres) para producción."
+    )
 
 DEBUG = False
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
