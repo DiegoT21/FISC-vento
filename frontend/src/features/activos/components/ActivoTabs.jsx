@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeftRight, Clock, Paperclip } from "lucide-react";
+import { ORIGEN_ACTIVO } from "../../../shared/utils/estado";
 
 const TABS = [
   ["info", "Información"],
@@ -26,16 +27,16 @@ export default function ActivoTabs({ activo }) {
 
       {tab === "info" && (
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
-          <div><p className="text-gray-400 text-xs">Categoría</p><p className="text-gray-800">{activo.categoria}</p></div>
-          <div><p className="text-gray-400 text-xs">Origen</p><p className="text-gray-800">{activo.origen}</p></div>
-          <div><p className="text-gray-400 text-xs">Ubicación</p><p className="text-gray-800">{activo.ubicacion}</p></div>
-          <div><p className="text-gray-400 text-xs">Tag RFID</p><p className="text-gray-800 font-mono text-xs">RF-{activo.servitac}</p></div>
+          <div><p className="text-gray-400 text-xs">Categoría</p><p className="text-gray-800">{activo.categoria_nombre}</p></div>
+          <div><p className="text-gray-400 text-xs">Origen</p><p className="text-gray-800">{ORIGEN_ACTIVO[activo.origen] ?? "—"}</p></div>
+          <div><p className="text-gray-400 text-xs">Ubicación</p><p className="text-gray-800">{activo.departamento_nombre} / {activo.ubicacion_nombre}</p></div>
+          <div><p className="text-gray-400 text-xs">Tag RFID</p><p className="text-gray-800 font-mono text-xs">{activo.tag_rfid || "Sin etiqueta"}</p></div>
         </div>
       )}
       {tab === "historial" && (
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-2 text-sm text-gray-600"><Clock size={14} className="text-gray-400" /> Registrado en el sistema — 03 feb 2025</div>
-          <div className="flex items-center gap-2 text-sm text-gray-600"><ArrowLeftRight size={14} className="text-gray-400" /> Trasladado a {activo.ubicacion} — 14 jun 2026</div>
+          <div className="flex items-center gap-2 text-sm text-gray-600"><ArrowLeftRight size={14} className="text-gray-400" /> Trasladado a {activo.ubicacion_nombre}— 14 jun 2026</div>
         </div>
       )}
       {tab === "documentos" && (
