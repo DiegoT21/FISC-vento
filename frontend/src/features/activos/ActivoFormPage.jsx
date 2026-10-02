@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { ESTADO_ACTIVO, ORIGEN_ACTIVO } from "../../shared/utils/estado";
-import { crearActivo, listarTodasCategorias, listarTodosDepartamentos } from "../../shared/api/activos";
+import { crearActivo, crearCategoria, listarTodasCategorias } from "../../shared/api/activos";
+import { listarTodosDepartamentos } from "../../shared/api/ubicaciones";
 import { useApi } from "../../shared/hooks/useApi";
 import { useRole } from "../../shared/hooks/useRole";
 
@@ -43,10 +44,25 @@ export default function ActivoFormPage() {
   const [errorGeneral, setErrorGeneral] = useState("");
   const [guardando, setGuardando] = useState(false);
 
-  const categorias = useApi(listarTodasCategorias, []);
+  const [recargaCat, setRecargaCat] = useState(0);
+  const [nuevaCat, setNuevaCat] = useState(null); // null = oculto, string = texto en edición
+  const [errorCat, setErrorCat] = useState("");
+  const categorias = useApi(listarTodasCategorias, [recargaCat]);
   const departamentos = useApi(listarTodosDepartamentos, []);
 
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
+
+  async function agregarCategoria() {
+    setErrorCat("");
+    try {
+      const nueva = await crearCategoria(nuevaCat.trim());
+      setNuevaCat(null);
+      setForm((f) => ({ ...f, categoria: String(nueva.id) }));
+      setRecargaCat((n) => n + 1);
+    } catch (err) {
+      setErrorCat(err.status === 400 && err.data ? Object.values(err.data).flat().join(" ") : "No se pudo crear la categoría.");
+    }
+  }
 
   async function enviar(e) {
     e.preventDefault();
@@ -155,6 +171,38 @@ export default function ActivoFormPage() {
             </select>
           </Campo>
         </div>
+
+        {nuevaCat === null ? (
+          <button type="button" onClick={() => setNuevaCat("")} className="text-sm text-fisc-800 hover:underline">
+            + Nueva categoría
+          </button>
+        ) : (
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                maxLength={100}
+                value={nuevaCat}
+                onChange={(e) => setNuevaCat(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (nuevaCat.trim()) agregarCategoria();
+                  }
+                }}
+                placeholder="Nombre de la categoría"
+                className={`${inputCls} flex-1`}
+              />
+              <button type="button" disabled={!nuevaCat.trim()} onClick={agregarCategoria} className="bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
+                Crear categoría
+              </button>
+              <button type="button" onClick={() => { setNuevaCat(null); setErrorCat(""); }} className="text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                Cancelar
+              </button>
+            </div>
+            {errorCat && <p className="text-xs text-red-700">{errorCat}</p>}
+          </div>
+        )}
 
         {errores?.non_field_errors && (
           <p className="text-sm text-red-700">{errores.non_field_errors.join(" ")}</p>
