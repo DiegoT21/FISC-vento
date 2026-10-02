@@ -9,6 +9,7 @@ import AuditoriaPage from "../features/auditoria/AuditoriaPage";
 import UsuariosPage from "../features/administracion/UsuariosPage";
 import PrestamosPage from "../features/prestamos/PrestamosPage";
 import TrasladosPage from "../features/traslados/TrasladosPage";
+import ReportesPage from "../features/reportes/ReportesPage";
 import Login from "../features/login/Login";
 
 export const router = createBrowserRouter([
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: "activos/:id", element: <ActivoDetailPage /> },
       { path: "ubicaciones", element: <UbicacionesPage /> },
       { path: "escaneo", element: <EscaneoPage /> },
+      { path: "reportes", element: <ReportesPage /> },
       { path: "auditoria", element: <AuditoriaPage /> },
       { path: "administracion", element: <UsuariosPage /> },
       { path: "prestamos", element: <PrestamosPage /> },

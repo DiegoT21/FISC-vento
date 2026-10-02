@@ -1,12 +1,16 @@
-export function estadoTone(estado) {
-  if (estado === "EN USO") return "good";
-  if (estado === "DAÑADO") return "bad";
-  return "neutral";
-}
+// Estados y orígenes del modelo real (backend/apps/activos/models.py).
 
-export function estatusTone(estatus) {
-  if (estatus === "EXISTE") return "good";
-  if (estatus === "ADICIONAR") return "info";
-  if (estatus === "EXTRAVIADO" || estatus === "NO EXISTE") return "bad";
-  return "neutral";
-}
+export const ESTADOS = {
+  ACTIVO: { label: "Activo", tone: "good" },
+  INACTIVO: { label: "Inactivo", tone: "neutral" },
+  INOPERATIVO: { label: "Inoperativo", tone: "bad" },
+};
+
+export const ORIGENES = {
+  COMPRADO: "Comprado",
+  DONADO: "Donado",
+};
+
+export const estadoLabel = (estado) => ESTADOS[estado]?.label ?? estado;
+export const estadoTone = (estado) => ESTADOS[estado]?.tone ?? "neutral";
+export const origenLabel = (origen) => ORIGENES[origen] ?? "—";
