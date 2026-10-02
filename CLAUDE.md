@@ -37,10 +37,10 @@ Una tarea no está hecha hasta que:
 
 - **Todo cambio pasa primero por Staging, siempre.** Nunca despliegues ni promociones algo a producción que no haya pasado antes por staging. Nunca hagas push a `main` ni dispares `deploy-production.yml` a mano.
 - **Cierre obligatorio de cada respuesta:** termina *siempre* con la pregunta “¿Lo subo a producción?” (indica en una línea el estado: qué está solo local, qué ya está en staging, qué ya está en producción). Preguntar no autoriza nada: solo un “sí” explícito del usuario en esa conversación habilita subir a producción, y vale únicamente para lo que se preguntó.
-- **Cómo funciona hoy el pipeline** (`.github/workflows/pipeline.yml`): un push a `develop` corre test → deploy a staging → smoke tests → **auto-merge a `main` → deploy a producción**, todo encadenado. Es decir, **hoy no existe un “solo staging”**: el push a `develop` que llega a staging sigue hacia producción si los checks pasan (salvo que el entorno `production` de GitHub exija aprobación manual; no está verificado). Por eso:
-  - **No hagas push a `develop` sin avisar antes**, con estas palabras: “Esto llegará a staging y, si pasa los checks, seguirá automáticamente a producción”, y espera el visto bueno.
-  - Después del push, reporta el resultado de staging (tests, smoke HTTP y de navegador) antes de decir que algo está listo.
-  - Si el usuario quiere que producción espere su confirmación *de verdad*, el pipeline debe cambiarse (p. ej. staging en push a `develop` y producción solo con `workflow_dispatch` o con aprobación requerida en el entorno `production`). Propónlo; no lo cambies sin pedirlo.
+- **Cómo funciona el pipeline** (`.github/workflows/`):
+  - Push a `develop` → `pipeline.yml`: tests → deploy a **staging** → smoke HTTP y de navegador. **Termina ahí**; ya no llega a producción.
+  - Producción solo con `deploy-production.yml` ("Promover a producción"), manual (`workflow_dispatch`): verifica que el commit actual de `develop` pasó el pipeline de staging, mergea `develop` en `main`, despliega y corre smoke tests. El entorno `production` de GitHub debe exigir un revisor (ver `docs/arquitectura.md`).
+- **Tu flujo:** push a `develop` solo con visto bueno del usuario → reporta el resultado de staging (tests, smoke HTTP y de navegador) antes de decir que algo está listo → pregunta “¿Lo subo a producción?”. **Nunca dispares la promoción a producción tú mismo**: la acciona el usuario desde GitHub Actions, o te la pide explícitamente.
 - **No hagas push ni abras PR sin que el usuario lo pida.** Commits locales frecuentes y atómicos sí.
 - Los `.sh` llevan finales **LF** (`.gitattributes`); no los conviertas.
 - Pie de commit/PR: el que indique el sistema (Co-Authored-By de Claude).

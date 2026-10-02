@@ -8,6 +8,14 @@
 - **Contenerización**: Docker / docker-compose (servicios `db`, `backend`, `frontend`).
 - **Pruebas de carga**: Locust (`backend/loadtests/locustfile.py`).
 
+## Despliegue: staging primero, producción con aprobación
+
+- **Push a `develop`** (`pipeline.yml`): corre tests de backend y frontend, despliega a **staging** y ejecuta smoke tests (HTTP y de navegador). Aquí se detiene.
+- **Promoción a producción** (`deploy-production.yml`, workflow "Promover a producción"): se acciona a mano en GitHub → Actions → *Run workflow*. Primero comprueba que el commit actual de `develop` tiene una ejecución exitosa del pipeline de staging; si no, aborta. Luego mergea `develop` en `main`, despliega por SSH y corre smoke tests.
+- **Aprobación obligatoria (configuración manual, una sola vez):** en GitHub → Settings → Environments → `production`, activar *Required reviewers* y añadir a quien deba aprobar. Sin esto, el workflow manual igualmente exige que alguien lo dispare, pero no hay segunda confirmación.
+- **Primera promoción tras este cambio:** el archivo nuevo aún no está en `main`, así que al correr el workflow elige la rama `develop` en *Use workflow from*. Desde esa promoción, `main` ya tiene la versión nueva.
+- Antes de este cambio, un push a `develop` seguía solo hasta producción; ya no.
+
 ## Backups de base de datos
 
 `scripts/backup_db.sh` hace un `pg_dump` comprimido del contenedor `db` y
