@@ -8,9 +8,9 @@ producto/interfaz.
 
 - **Color primario**: verde institucional (usado en la navegación activa,
   botones principales, encabezados).
-- **Colores de estado** (badges/etiquetas): verde = estado positivo (EN
-  USO, EXISTE), rojo = estado crítico (DAÑADO, EXTRAVIADO/NO EXISTE), azul
-  = informativo (ADICIONAR, Pendiente), ámbar = alerta, gris = neutral.
+- **Colores de estado** (badges con punto y borde): verde = Activo, gris =
+  Inactivo, rojo = Inoperativo, azul = informativo, ámbar = alerta. Los
+  grises del sistema son la escala `slate`.
 - **Iconografía**: un ícono distinto por módulo de navegación, consistente
   en todo el sidebar.
 - **Layout**: barra lateral fija con logo/branding de la FISC + contenido
@@ -26,46 +26,57 @@ producto/interfaz.
 | Panel principal | ✅ | ✅ | ✅ |
 | Activos | ✅ | ✅ | ✅ |
 | Escaneo Barras/RFID | ✅ | ✅ | ✅ |
+| Reportes | ✅ | — | ✅ |
 | Ubicaciones | ✅ | — | ✅ |
 | Préstamos *(stretch)* | ✅ | ✅ | ✅ |
 | Traslados *(stretch)* | ✅ | ✅ | — |
 | Auditoría | ✅ | — | ✅ |
 | Administración | ✅ | — | — |
 
-Esta matriz es la del mockup actual — vale la pena revisarla con el asesor,
-ya que hoy el rol se elige manualmente (modo demo), no viene de un login
-real.
+Esta matriz controla la navegación (el rol ya viene del login real). Ojo:
+hoy solo oculta botones y enlaces en la interfaz; la API de Activos todavía
+no aplica permisos por rol (`usuarios/permissions.py` los define pero no se
+usan ahí). Vale la pena revisar la matriz con el asesor.
 
 ## Páginas y secciones (lo que existe hoy)
 
 **1. Panel principal**
-- 5 tarjetas de estadística: Total de activos, En uso, Dañados, Traslados
-  pendientes, Préstamos activos.
-- Panel "Pendientes de atención": lista de alertas con su etiqueta de
-  estado (ej. activos sin estatus definido, activo extraviado, traslado
-  esperando autorización).
-- Sin gráficas — solo números y texto.
+- 4 tarjetas de estadística con ícono (datos reales): Total de activos,
+  Activos, Inactivos, Inoperativos.
+- Panel "Pendientes de atención": alertas calculadas (activos inoperativos e
+  inactivos). Si no hay ninguna, muestra "Todo en orden".
 
 **2. Activos**
-- Buscador (por descripción o código) + filtro por categoría.
-- Tabla: Descripción, código, Ubicación, Estatus, Estado.
-- Botón "Registrar activo" (visual, sin flujo de formulario todavía).
-- **Detalle de un activo**: encabezado con nombre, referencia y badges de
-  estatus/estado, organizado en 3 pestañas:
-  - *Información*: categoría, origen, ubicación, identificador RFID.
-  - *Historial*: pestaña presente en la navegación, sin contenido diseñado
-    aún.
-  - *Documentos*: idem, sin contenido diseñado aún.
+- Buscador (descripción, código o tag RFID) + filtros por categoría y estado,
+  con paginación.
+- Tabla: Descripción, Código, Categoría, Ubicación, Estado. Al hacer clic en
+  una fila se abre un **drawer lateral** con el resumen y un enlace a la
+  ficha completa.
+- Botón "Registrar activo" (solo Administrador y Custodio): formulario
+  modal con validación en cliente y errores del servidor por campo.
+- **Ficha de un activo**: encabezado con nombre, código y estado, en 3
+  pestañas:
+  - *Información*: categoría, origen, departamento, ubicación, tag RFID y
+    la **etiqueta de código de barras** (imagen con botones Descargar e
+    Imprimir).
+  - *Historial*: línea de tiempo con las fechas reales de registro y de
+    última modificación (todavía no hay historial de movimientos).
+  - *Documentos*: estado vacío "próximamente" (sin backend de documentos).
+- Estados de carga (esqueletos), error con "Reintentar" y vacío.
 
 **3. Escaneo**
 - Selector entre modo "Código de barras" y "Lector RFID" (no hay modo QR — los activos ya usan código de barras físico, y RFID es el método nuevo que añade este proyecto).
-- Vista de cámara (simulada).
-- Botón "Simular lectura" que resuelve un activo de ejemplo.
+- Campo de lectura con foco automático: sirve para lectores de mano y RFID
+  que escriben como teclado y pulsan Enter. Resuelve contra
+  `POST /api/escaneo/escanear/`.
+- Resultado: tarjeta del activo encontrado (enlaza a su ficha) o aviso de
+  que no existe. "Simular lectura" toma un activo al azar para demos.
 
 **4. Ubicaciones**
 - Departamentos (ej. TI, Dirección FISC, Docencia) con sus
   sub-ubicaciones (oficinas, salones, laboratorios) agrupadas debajo de
-  cada uno.
+  cada uno, leídos de la API. El botón "Nueva ubicación" aún no tiene
+  formulario.
 
 **5. Préstamos** *(módulo stretch — prioridad baja)*
 - Tabla de activos prestados a una persona, con estado Activo/Devuelto.
@@ -81,28 +92,22 @@ real.
 **8. Administración**
 - Tabla de usuarios del sistema: nombre, usuario, rol asignado.
 
+**9. Reportes** *(Administrador y Auditor)*
+- Dona de activos por estado con porcentajes, y barras por categoría y por
+  departamento (SVG, sin librerías de gráficos). Datos de
+  `/api/reportes/resumen/`.
+
 ## Pendiente de diseñar
 
-1. **Reportes con gráficas** — es un requisito del proyecto ("generación
-   de reportes detallados") y hoy no existe ninguna pantalla ni sección
-   con visualizaciones. Falta diseñar: una vista de Reportes (o ampliar el
-   Panel principal) con al menos un gráfico por estado del inventario
-   (Activo/Inactivo/Inoperativo) y uno por ubicación/departamento, más una
-   vista comparativa "antes (Excel) vs. después (sistema)" para la
-   sustentación de la tesis.
-2. **Pantalla de inicio de sesión** — hoy el rol activo se elige en un
-   selector de modo demo; falta diseñar la pantalla de login real y cómo
-   se ve el sistema para un usuario recién autenticado.
-3. **Formularios de alta/edición** — "Registrar activo", dar de alta una
-   ubicación o usuario, autorizar un traslado: existen los botones/acciones
-   pero no el formulario ni el flujo paso a paso.
-4. **Contenido de las pestañas Historial y Documentos** en el detalle de
-   Activo — están en la navegación pero vacías; falta decidir qué
-   información muestran y cómo se ve.
-5. **Visualización del código de barras generado** — no hay un lugar en
-   la interfaz (lista o detalle de un activo) donde se vea/descargue la
-   imagen del código para imprimir la etiqueta.
-6. **Responsive / uso en campo** — si el escaneo se va a usar desde el
-   celular dentro de un laboratorio u oficina, esa pantalla en particular
-   necesita un diseño adaptado a pantallas pequeñas; el resto del sistema
-   puede seguir siendo de escritorio.
+1. **Vista comparativa "antes (Excel) vs. después (sistema)"** para la
+   sustentación de la tesis — los Reportes actuales cubren estado,
+   categoría y departamento, pero no esta comparación.
+2. **Formularios de edición y de otras entidades** — el alta de activos ya
+   existe; faltan editar un activo, dar de alta una ubicación o un usuario y
+   autorizar un traslado.
+3. **Historial de movimientos y documentos del activo** — hoy el Historial
+   solo muestra fechas de registro/modificación y Documentos está vacío.
+4. **Responsive / uso en campo** — las tablas tienen scroll horizontal, pero
+   el menú lateral no se colapsa en pantallas pequeñas; la pantalla de
+   Escaneo en particular necesita un diseño para celular.
+5. **Permisos por rol en la API** — ver nota bajo la matriz de roles.
