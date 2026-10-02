@@ -19,7 +19,7 @@ class EsAdministradorOCustodio(BasePermission):
         )
 
 
-def _tiene_rol(request, roles):
+def tiene_rol(request, roles):
     user = request.user
     return bool(
         user and user.is_authenticated and (user.is_superuser or user.rol in roles)
@@ -34,7 +34,7 @@ def lectura_todos_escritura_roles(*roles):
         def has_permission(self, request, view):
             if request.method in SAFE_METHODS:
                 return bool(request.user and request.user.is_authenticated)
-            return _tiene_rol(request, roles)
+            return tiene_rol(request, roles)
 
     return LecturaTodosEscrituraRoles
 
@@ -44,7 +44,7 @@ def solo_roles(*roles):
 
     class SoloRoles(BasePermission):
         def has_permission(self, request, view):
-            return _tiene_rol(request, roles)
+            return tiene_rol(request, roles)
 
     return SoloRoles
 

@@ -9,5 +9,6 @@ export const ENDPOINTS = {
   PRESTAMOS: "/api/prestamos/",
   TRASLADOS: "/api/traslados/",
   AUDITORIA: "/api/auditoria/",
+  REPORTES: "/api/reportes/",
   USUARIOS: "/api/usuarios/",
 };
