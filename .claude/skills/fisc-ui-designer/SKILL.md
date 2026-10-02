@@ -29,14 +29,14 @@ Toda la aplicación utiliza la paleta oficial derivada del sello/logo de la FISC
 
 ### Layout General (Shell)
 
-- Fondo de Pantalla (Body): `bg-slate-50` / `bg-zinc-50`.
+- Fondo de Pantalla (Body): el azul claro `#E5F2FF` que usa `AppShell.jsx` (decisión del equipo; `bg-slate-50` solo como alternativa neutra).
 - Sidebar / Header Principal: `bg-fisc-800` o `bg-white border-b border-slate-200/80` con acentos `fisc-800`.
 - Tarjetas y Tablas: `bg-white border border-slate-200/80 shadow-sm rounded-xl`.
 
 ### Tipografía y Jerarquía
 
 - Pila tipográfica: `font-sans` (sistema por defecto).
-- IDs, Códigos QR, Etiquetas RFID y Números de Serie: usar estrictamente fuente monoespaciada (`font-mono text-xs text-slate-500 tracking-tight`).
+- IDs, códigos de barras, etiquetas RFID y números de serie: usar estrictamente fuente monoespaciada (`font-mono text-xs text-slate-500 tracking-tight`).
 - Valores numéricos de stock y precios: alineación a la derecha (`text-right font-mono font-semibold`).
 
 ### Iconografía
@@ -55,7 +55,7 @@ Para mantener consistencia en todo el proyecto, aplicar las siguientes clases se
 | H3 (Card / Modal Title) | `text-base font-semibold text-slate-800` | Encabezados de paneles laterales o modales |
 | Body / Standard | `text-sm font-normal text-slate-700` | Celdas de tablas, descripciones, inputs |
 | Caption / Muted | `text-xs font-normal text-slate-500` | Subetiquetas, metadatos, marcas de tiempo |
-| Code / Tag ID | `font-mono text-xs font-medium text-fisc-900` | Tags RFID, QR, Números de Serie |
+| Code / Tag ID | `font-mono text-xs font-medium text-fisc-900` | Tags RFID, códigos de barras, números de serie |
 
 ## 4. Patrones de Componentes UI
 
@@ -96,9 +96,9 @@ Para mantener consistencia en todo el proyecto, aplicar las siguientes clases se
 ```html
 <div class="border-2 border-dashed border-fisc-200 bg-fisc-50/50 hover:bg-fisc-50 rounded-xl p-8 text-center transition-colors cursor-pointer">
   <div class="w-12 h-12 rounded-full bg-fisc-100 text-fisc-800 flex items-center justify-center mx-auto mb-3">
-    <QrCode className="w-6 h-6" />
+    <ScanLine className="w-6 h-6" />
   </div>
-  <p class="text-sm font-medium text-slate-900">Listos para escanear código QR / RFID</p>
+  <p class="text-sm font-medium text-slate-900">Listos para escanear código de barras / RFID</p>
   <p class="text-xs text-slate-500 mt-1">Acerca el lector o arrastra el archivo de captura masiva</p>
 </div>
 ```
@@ -109,3 +109,4 @@ Para mantener consistencia en todo el proyecto, aplicar las siguientes clases se
 - Aplicar `fisc-800` como tono dominante de marca y `fisc-50` / `fisc-100` para estados activos/hover.
 - Estructurar vistas complejas en patrón Tabla + Drawer/Slide-over lateral para detalles de activos.
 - Asegurar que todos los campos de código/ID usen la clase `font-mono`.
+- El sistema usa solo código de barras y RFID para identificar activos; no existe QR en ninguna parte del proyecto (ver `docs/decisiones/0001-rfid-en-alcance.md`). No generar componentes, textos ni íconos de QR.
