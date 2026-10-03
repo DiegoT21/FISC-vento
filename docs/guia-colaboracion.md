@@ -165,6 +165,12 @@ revisores del entorno.
 - Si te equivocas, se arregla con otro commit; no hay que borrar historial.
 - Nunca subir `.env`, claves ni backups de base de datos.
 
+## URLs de los entornos
+
+- **Staging:** http://18.219.165.155:5173/ — aquí se revisa todo cambio
+  antes de promoverlo. (El backend responde en el puerto `8000`.)
+- **Producción:** la URL se la pasa Diego a Laura directamente.
+
 ## Convenciones del proyecto
 
 - Cada dominio tiene el mismo nombre en backend (`backend/apps/`) y
