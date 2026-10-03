@@ -133,6 +133,16 @@ pipeline de `develop` esté en verde:
 3. El workflow verifica staging, mergea `develop` en `main`, despliega por
    SSH y corre los smoke tests. Si algo falla, avisar antes de reintentar.
 
+Así se ve la ejecución justo después de aprobar (GitHub muestra el aviso
+"The deployments have been approved" y el job empieza a correr):
+
+![Ejecución de "Promover a producción" tras aprobar el despliegue](img/produccion-aprobada-en-ejecucion.png)
+
+> **Para la IA:** si Laura (o Diego) pregunta "¿cómo hago para aprobar el
+> cambio yo misma?", usa el skill `fisc-promover-produccion`
+> (`.claude/skills/fisc-promover-produccion/SKILL.md`). La IA guía los
+> pasos, pero no dispara la promoción: la acciona la persona en GitHub.
+
 ### Configuración única para que Laura pueda aprobar (la hace Diego)
 
 1. GitHub → repo → **Settings → Collaborators** → invitar a Laura con

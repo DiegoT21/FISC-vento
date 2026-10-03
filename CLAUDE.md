@@ -1,6 +1,6 @@
 # FISC-vento — Reglas maestras
 
-Se cargan en **cada** sesión. Si algo aquí choca con lo que se te pide, avisa antes de actuar. Detalle por área: skills `fisc-backend-standards`, `fisc-frontend-standards` y `fisc-ui-designer` (en `.claude/skills/`).
+Se cargan en **cada** sesión. Si algo aquí choca con lo que se te pide, avisa antes de actuar. Detalle por área: skills `fisc-backend-standards`, `fisc-frontend-standards` y `fisc-ui-designer` (en `.claude/skills/`); **si alguien pregunta cómo aprobar o subir algo a producción** (p. ej. Laura: "¿cómo hago para aprobar el cambio yo misma?"), usa el skill `fisc-promover-produccion`.
 
 ## 1. Qué es esto
 
