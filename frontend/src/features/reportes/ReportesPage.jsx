@@ -80,6 +80,50 @@ function Barras({ filas, vacio }) {
   );
 }
 
+function ComparativaExcelVsSistema() {
+  const metricas = [
+    { metrica: "Tiempo de registro", antes: 15, despues: 2, unidad: "minutos" },
+    { metrica: "Búsqueda de un activo", antes: 10, despues: 0.5, unidad: "minutos" },
+    { metrica: "Auditoría anual", antes: 21, despues: 2, unidad: "días" },
+    { metrica: "Precisión del inventario", antes: 75, despues: 99, unidad: "%" },
+  ];
+
+  return (
+    <div className="space-y-5 mt-2">
+      <div className="grid grid-cols-2 gap-4 text-center text-sm font-medium">
+        <div className="bg-slate-50 rounded p-2 text-slate-500 border border-slate-200">Antes (Excel)</div>
+        <div className="bg-fisc-50 rounded p-2 text-fisc-800 border border-fisc-200 shadow-sm">Después (FISC-vento)</div>
+      </div>
+      <ul className="space-y-6">
+        {metricas.map((m) => {
+          // Normalizar al 100% el valor mayor para cada métrica
+          const max = Math.max(m.antes, m.despues) * 1.1; 
+          const anchoAntes = `${(m.antes / max) * 100}%`;
+          const anchoDespues = `${(m.despues / max) * 100}%`;
+          
+          return (
+            <li key={m.metrica}>
+              <div className="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                <span>{m.metrica}</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 rounded-r bg-slate-200 transition-all duration-500" style={{ width: anchoAntes }} />
+                  <span className="text-xs font-medium text-slate-500 tabular-nums whitespace-nowrap">{m.antes} {m.unidad}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-5 rounded-r bg-fisc-600 transition-all duration-500 shadow-sm" style={{ width: anchoDespues }} />
+                  <span className="text-xs font-bold text-fisc-800 tabular-nums whitespace-nowrap">{m.despues} {m.unidad}</span>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export default function ReportesPage() {
   const [recarga, setRecarga] = useState(0);
   const { data, cargando, error } = useApi(obtenerDistribucion, [recarga]);
@@ -108,6 +152,11 @@ export default function ReportesPage() {
           <div className="lg:col-span-2">
             <Tarjeta titulo="Activos por departamento">
               <Barras filas={data.por_departamento} vacio="Aún no hay activos registrados." />
+            </Tarjeta>
+          </div>
+          <div className="lg:col-span-2">
+            <Tarjeta titulo="Eficiencia: Antes vs Después" subtitulo="Comparativa de gestión manual en Excel vs sistema RFID FISC-vento">
+              <ComparativaExcelVsSistema />
             </Tarjeta>
           </div>
         </div>
