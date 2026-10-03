@@ -15,8 +15,16 @@ class EstadoActivo(models.TextChoices):
     INOPERATIVO = "INOPERATIVO", "Inoperativo"
 
 
+class OrigenActivo(models.TextChoices):
+    COMPRADO = "COMPRADO", "Comprado"
+    DONADO = "DONADO", "Donado"
+
+
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ["nombre"]
 
     def __str__(self):
         return self.nombre
@@ -24,9 +32,10 @@ class Categoria(models.Model):
 
 class Activo(models.Model):
     codigo = models.CharField(
-        max_length=50, unique=True, help_text="Código interno de inventario (p. ej. SVT-118423)."
+        "código", max_length=50, unique=True, help_text="Código interno de inventario (p. ej. SVT-118423)."
     )
     tag_rfid = models.CharField(
+        "tag RFID",
         max_length=100,
         unique=True,
         null=True,
@@ -34,6 +43,24 @@ class Activo(models.Model):
         help_text="ID único de la etiqueta RFID asociada, si el activo tiene una.",
     )
     descripcion = models.CharField(max_length=255)
+    ref = models.CharField(
+        "REF",
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Número REF (correlativo interno), si el activo lo tiene.",
+    )
+    numero_serie = models.CharField(
+        "número de serie",
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Número de serie del fabricante, si lo tiene.",
+    )
+    marca = models.CharField(max_length=100, blank=True)
+    modelo = models.CharField(max_length=100, blank=True)
     categoria = models.ForeignKey(
         Categoria, on_delete=models.PROTECT, related_name="activos"
     )
@@ -46,6 +73,12 @@ class Activo(models.Model):
         null=True,
         blank=True,
         related_name="activos_asignados",
+    )
+    origen = models.CharField(
+        max_length=20,
+        choices=OrigenActivo.choices,
+        blank=True,
+        help_text="Cómo ingresó el activo a la facultad (opcional).",
     )
     estado = models.CharField(
         max_length=20, choices=EstadoActivo.choices, default=EstadoActivo.ACTIVO

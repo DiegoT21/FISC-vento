@@ -1,5 +1,7 @@
 from rest_framework import mixins, viewsets
 
+from apps.usuarios.permissions import SoloAdministradorYAuditor
+
 from .models import RegistroAuditoria
 from .serializers import RegistroAuditoriaSerializer
 
@@ -9,3 +11,4 @@ class RegistroAuditoriaViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 
     queryset = RegistroAuditoria.objects.select_related("usuario").all()
     serializer_class = RegistroAuditoriaSerializer
+    permission_classes = [SoloAdministradorYAuditor]

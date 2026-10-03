@@ -1,7 +1,12 @@
-name: Deploy a Producción
+name: Promover a producción
 
-# Nunca se dispara solo con un push — solo corre cuando alguien lo acciona
-# a mano desde la pestaña Actions de GitHub ("Run workflow").
+# Única vía hacia producción. Nunca se dispara solo con un push: alguien lo
+# acciona a mano desde Actions ("Run workflow") y, además, el entorno
+# "production" puede exigir aprobación de un revisor (Settings > Environments).
+#
+# Antes de tocar nada verifica que el commit actual de develop YA pasó el
+# pipeline de staging. Luego mergea develop en main, despliega y corre los
+# smoke tests.
 on:
   workflow_dispatch:
     inputs:
@@ -11,12 +16,46 @@ on:
         default: ""
 
 jobs:
-  deploy:
+  promover-y-desplegar:
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 15
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
     steps:
-      - name: Desplegar en la instancia de producción por SSH
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verificar que el commit de develop ya pasó por staging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          git fetch origin develop
+          sha=$(git rev-parse origin/develop)
+          echo "Commit de develop a promover: $sha"
+          ok=$(gh run list --repo "${{ github.repository }}" --workflow pipeline.yml --branch develop \
+                 --limit 50 --json headSha,conclusion \
+                 --jq "[.[] | select(.headSha == \"$sha\" and .conclusion == \"success\")] | length")
+          if [ "$ok" -lt 1 ]; then
+            echo "Este commit de develop NO tiene una ejecución exitosa del pipeline de staging."
+            echo "Espera a que el pipeline termine en verde (o corrígelo) antes de promover a producción."
+            exit 1
+          fi
+          echo "OK: el commit pasó tests y staging."
+
+      - name: Mergear develop en main
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge origin/develop --no-ff -m "promoción: develop -> main (staging verificado). ${{ inputs.motivo }}"
+          git push origin main
+
+      - name: Desplegar en producción por SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.PROD_HOST }}
@@ -31,39 +70,69 @@ jobs:
             sudo docker compose up -d --build
             sudo docker compose exec -T backend python manage.py migrate --noinput
 
-      - name: Smoke test (verificar que producción responde)
+      - name: Smoke test HTTP (producción)
         run: |
           set -e
           HOST="${{ secrets.PROD_HOST }}"
-
           check() {
-            url="$1"
-            name="$2"
-            shift 2
-            expected_codes="$*"
+            url="$1"; name="$2"; shift 2; expected_codes="$*"
             for i in 1 2 3 4 5 6; do
               code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
               for ok in $expected_codes; do
-                if [ "$code" = "$ok" ]; then
-                  echo "OK  $name -> HTTP $code"
-                  return 0
-                fi
+                [ "$code" = "$ok" ] && echo "OK  $name -> HTTP $code" && return 0
               done
               echo "  intento $i: $name -> HTTP $code (esperaba $expected_codes), reintentando..."
               sleep 5
             done
-            echo "FALLO $name -> HTTP $code (esperaba $expected_codes)"
-            return 1
+            echo "FALLO $name -> HTTP $code (esperaba $expected_codes)"; return 1
           }
-
           fail=0
           check "http://${HOST}:5173/" "Frontend" 200 || fail=1
           check "http://${HOST}:8000/admin/login/" "Backend admin" 200 || fail=1
-          # 403 es la respuesta correcta sin autenticar (DRF exige login) — confirma que Django/DRF responde.
+          # 403 es la respuesta correcta sin autenticar (DRF exige login).
           check "http://${HOST}:8000/api/activos/" "Backend API" 200 403 || fail=1
+          [ "$fail" -eq 1 ] && echo "Smoke test: servicio caído tras el deploy a PRODUCCIÓN." && exit 1
+          echo "Smoke test HTTP OK: producción responde correctamente."
 
-          if [ "$fail" -eq 1 ]; then
-            echo "El smoke test encontró al menos un servicio caído tras el deploy a PRODUCCIÓN."
-            exit 1
-          fi
-          echo "Smoke test OK: producción responde correctamente."
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Smoke test de navegador (producción) — errores de consola / pantalla en blanco
+        env:
+          CHECK_HOST: ${{ secrets.PROD_HOST }}
+        run: |
+          npm init -y > /dev/null 2>&1
+          npm install playwright@1.47.0 > /dev/null 2>&1
+          npx playwright install --with-deps chromium
+          cat > check.js <<'EOF'
+          const { chromium } = require('playwright');
+          (async () => {
+            const host = process.env.CHECK_HOST;
+            const url = `http://${host}:5173/`;
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            const errors = [];
+            page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+            page.on('pageerror', err => errors.push(err.message));
+            let loadOk = true;
+            try {
+              await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
+            } catch (e) {
+              loadOk = false;
+              errors.push(`Fallo al cargar ${url}: ${e.message}`);
+            }
+            const bodyText = await page.evaluate(() => document.body.innerText || '');
+            if (!loadOk || bodyText.trim().length === 0) {
+              errors.push('La página cargó pero el <body> está vacío (posible pantalla en blanco).');
+            }
+            await browser.close();
+            if (errors.length > 0) {
+              console.error('Errores encontrados en ' + url + ':');
+              errors.forEach(e => console.error(' - ' + e));
+              process.exit(1);
+            }
+            console.log(`OK: ${url} cargó sin errores de consola y con contenido visible.`);
+          })();
+          EOF
+          node check.js

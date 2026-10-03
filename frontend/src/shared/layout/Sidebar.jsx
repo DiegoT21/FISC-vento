@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Boxes, MapPin, HandCoins, ArrowLeftRight, ScrollText,
-  Users, ScanLine, User, LogOut,
+  Users, ScanLine, User, LogOut, BarChart3,
 } from "lucide-react";
 import { useRole } from "../hooks/useRole";
 import { useAuth } from "../hooks/useAuth";
@@ -14,6 +14,7 @@ const NAV = [
   { path: "/dashboard/activos", label: "Activos", icon: Boxes, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/escaneo", label: "Escaneo Barras / RFID", icon: ScanLine, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/ubicaciones", label: "Ubicaciones", icon: MapPin, roles: ["Administrador", "Auditor"] },
+  { path: "/dashboard/reportes", label: "Reportes", icon: BarChart3, roles: ["Administrador", "Auditor"] },
   { path: "/dashboard/prestamos", label: "Préstamos", icon: HandCoins, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/traslados", label: "Traslados", icon: ArrowLeftRight, roles: ["Administrador", "Custodio"] },
   { path: "/dashboard/auditoria", label: "Auditoría", icon: ScrollText, roles: ["Administrador", "Auditor"] },
@@ -42,16 +43,16 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 flex flex-col shrink-0">
-      <div className="px-4 py-4 border-b border-gray-100 flex items-center gap-2.5">
+    <aside className="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0">
+      <div className="px-4 py-4 border-b border-slate-100 flex items-center gap-2.5">
         <img
           src={LOGO_SRC}
           alt="Logo FISC"
           className="w-9 h-9 object-contain shrink-0"
         />
         <div>
-          <p className="text-sm font-medium text-gray-900 leading-tight">Gestión de Activos</p>
-          <p className="text-xs text-gray-400 leading-tight">Facultad de Ing. de Sistemas Computacionales</p>
+          <p className="text-sm font-medium text-slate-900 leading-tight">Gestión de Activos</p>
+          <p className="text-xs text-slate-400 leading-tight">Facultad de Ing. de Sistemas Computacionales</p>
         </div>
       </div>
       <nav className="flex-1 py-2">
@@ -62,20 +63,20 @@ export default function Sidebar() {
             <Link
               key={n.path}
               to={n.path}
-              className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm ${active ? "bg-fisc-50 text-fisc-800 font-medium border-r-2 border-fisc-800" : "text-gray-600 hover:bg-gray-50"}`}
+              className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm ${active ? "bg-fisc-50 text-fisc-800 font-medium border-r-2 border-fisc-800" : "text-slate-600 hover:bg-slate-50"}`}
             >
               <Icon size={16} /> {n.label}
             </Link>
           );
         })}
       </nav>
-      <div className="p-3 border-t border-gray-100 space-y-3">
+      <div className="p-3 border-t border-slate-100 space-y-3">
         {/* Card Rol activo (Informativo / según cuenta) */}
-        <div className="bg-[#EEF1FB] rounded-2xl p-2.5 select-none">
-          <p className="text-xs font-semibold text-gray-500 mb-1.5 px-1">Rol activo</p>
+        <div className="bg-fisc-50 border border-fisc-100 rounded-2xl p-2.5 select-none">
+          <p className="text-xs font-semibold text-slate-500 mb-1.5 px-1">Rol activo</p>
           <div className="bg-white rounded-xl px-3 py-2 flex items-center gap-2.5 shadow-sm">
             <span className="w-2.5 h-2.5 rounded-full bg-fisc-800 shrink-0"></span>
-            <span className="text-sm font-bold text-gray-900 tracking-tight">{role}</span>
+            <span className="text-sm font-bold text-slate-900 tracking-tight">{role}</span>
           </div>
         </div>
 
@@ -89,16 +90,16 @@ export default function Sidebar() {
               <span className="absolute bottom-0 right-0 w-3 h-3 bg-fisc-300 border-2 border-white rounded-full"></span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 leading-tight truncate">{nombreMostrado}</p>
-              <p className="text-xs font-medium text-gray-500 leading-tight truncate">{usuario?.email}</p>
-              <p className="text-xs font-medium text-gray-500 leading-tight">FISC</p>
+              <p className="text-sm font-bold text-slate-900 leading-tight truncate">{nombreMostrado}</p>
+              <p className="text-xs font-medium text-slate-500 leading-tight truncate">{usuario?.email}</p>
+              <p className="text-xs font-medium text-slate-500 leading-tight">FISC</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleLogout}
             title="Cerrar sesión"
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
           >
             <LogOut size={19} />
           </button>

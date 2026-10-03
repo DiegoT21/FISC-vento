@@ -28,5 +28,10 @@ class SolicitudTraslado(models.Model):
     )
     creado_en = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = "Solicitud de traslado"
+        verbose_name_plural = "Solicitudes de traslado"
+        ordering = ["-creado_en"]
+
     def __str__(self):
         return f"{self.activo}: {self.ubicacion_origen} → {self.ubicacion_destino}"

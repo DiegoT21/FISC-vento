@@ -1,13 +1,14 @@
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Usuario
 from .permissions import EsAdministrador
 from .serializers import UsuarioSerializer
+from .throttles import LoginRateThrottle
 
 
 class UsuarioViewSet(viewsets.ModelViewSet):
@@ -18,6 +19,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login_view(request):
     """Autentica por email o username + password y devuelve un token.
 
@@ -25,8 +27,14 @@ def login_view(request):
     username como campo de login — acá se resuelve el email a su username
     antes de autenticar, así ambos funcionan.
     """
-    identificador = (request.data.get("email") or request.data.get("username") or "").strip()
-    password = request.data.get("password") or ""
+    datos = request.data if hasattr(request.data, "get") else {}
+    identificador = datos.get("email") or datos.get("username") or ""
+    password = datos.get("password") or ""
+
+    # Solo texto: un objeto, lista o número aquí es un intento de manipulación.
+    if not isinstance(identificador, str) or not isinstance(password, str):
+        return Response({"detail": "Correo/usuario y contraseña deben ser texto."}, status=400)
+    identificador = identificador.strip()
 
     if not identificador or not password:
         return Response({"detail": "Correo/usuario y contraseña son requeridos."}, status=400)
