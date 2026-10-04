@@ -3,8 +3,8 @@ from rest_framework import filters, viewsets
 
 from apps.usuarios.permissions import EscrituraSoloAdministrador, PuedeGestionarInventario
 
-from .models import Activo, Categoria
-from .serializers import ActivoSerializer, CategoriaSerializer
+from .models import Activo, Categoria, DocumentoActivo
+from .serializers import ActivoSerializer, CategoriaSerializer, DocumentoActivoSerializer
 
 
 class CategoriaViewSet(viewsets.ModelViewSet):
@@ -37,3 +37,11 @@ class ActivoViewSet(viewsets.ModelViewSet):
         if self.action == "destroy":
             return [EscrituraSoloAdministrador()]
         return [PuedeGestionarInventario()]
+
+
+class DocumentoActivoViewSet(viewsets.ModelViewSet):
+    permission_classes = [PuedeGestionarInventario]
+    queryset = DocumentoActivo.objects.all()
+    serializer_class = DocumentoActivoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["activo"]

@@ -1,3 +1,4 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
 
 from apps.usuarios.permissions import SoloAdministradorYAuditor
@@ -12,3 +13,5 @@ class RegistroAuditoriaViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     queryset = RegistroAuditoria.objects.select_related("usuario").all()
     serializer_class = RegistroAuditoriaSerializer
     permission_classes = [SoloAdministradorYAuditor]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["tabla", "objeto_id"]

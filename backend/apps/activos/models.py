@@ -93,3 +93,18 @@ class Activo(models.Model):
 
     def __str__(self):
         return f"{self.codigo} — {self.descripcion}"
+
+
+class DocumentoActivo(models.Model):
+    activo = models.ForeignKey(Activo, on_delete=models.CASCADE, related_name="documentos")
+    nombre = models.CharField(max_length=255)
+    archivo = models.FileField(upload_to="activos/documentos/")
+    subido_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Documento de activo"
+        verbose_name_plural = "Documentos de activo"
+        ordering = ["-subido_en"]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.activo.codigo})"
