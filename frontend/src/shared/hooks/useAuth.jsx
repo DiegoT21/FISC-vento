@@ -7,19 +7,34 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
-  const [cargando, setCargando] = useState(true);
+  // Sin token no hay nada que verificar: arrancamos ya "listos".
+  const [cargando, setCargando] = useState(() => !!localStorage.getItem(TOKEN_KEY));
+  const [errorConexion, setErrorConexion] = useState(false);
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      setCargando(false);
-      return;
-    }
+    if (!localStorage.getItem(TOKEN_KEY)) return;
+    let vigente = true;
     get(`${ENDPOINTS.USUARIOS}me/`)
-      .then(setUsuario)
-      .catch(() => localStorage.removeItem(TOKEN_KEY))
-      .finally(() => setCargando(false));
-  }, []);
+      .then((u) => vigente && setUsuario(u))
+      .catch((err) => {
+        if (!vigente) return;
+        // Solo un 401/403 significa que el token ya no vale. Un corte de red o
+        // un 5xx no debe cerrar la sesión: se conserva el token y se reintenta.
+        if (err.status === 401 || err.status === 403) localStorage.removeItem(TOKEN_KEY);
+        else setErrorConexion(true);
+      })
+      .finally(() => vigente && setCargando(false));
+    return () => {
+      vigente = false;
+    };
+  }, [intento]);
+
+  function reintentar() {
+    setErrorConexion(false);
+    setCargando(true);
+    setIntento((n) => n + 1);
+  }
 
   async function login(email, password) {
     const data = await post(`${ENDPOINTS.USUARIOS}login/`, { email, password });
@@ -35,7 +50,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, cargando, autenticado: !!usuario, login, logout }}>
+    <AuthContext.Provider value={{ usuario, cargando, errorConexion, reintentar, autenticado: !!usuario, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
