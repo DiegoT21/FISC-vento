@@ -4,9 +4,9 @@ import { listarHistorialActivo } from "../../../shared/api/auditoria";
 import { mensajeDeError } from "../../../shared/utils/errores";
 
 const ACCIONES = {
-  create: { titulo: "Registro creado", icon: Plus, tono: "bg-fisc-100 text-fisc-800" },
-  update: { titulo: "Registro modificado", icon: Pencil, tono: "bg-slate-100 text-slate-600" },
-  delete: { titulo: "Registro eliminado", icon: Trash2, tono: "bg-red-50 text-red-700" },
+  creacion: { titulo: "Registro creado", icon: Plus, tono: "bg-fisc-100 text-fisc-800" },
+  modificacion: { titulo: "Registro modificado", icon: Pencil, tono: "bg-slate-100 text-slate-600" },
+  eliminacion: { titulo: "Registro eliminado", icon: Trash2, tono: "bg-red-50 text-red-700" },
 };
 
 const accionDe = (accion) =>
@@ -38,7 +38,7 @@ function Cambios({ accion, detalle }) {
   if (!esObjeto(detalle)) return null;
   const filas = Object.entries(detalle);
   if (filas.length === 0) return null;
-  const esUpdate = String(accion ?? "").toLowerCase() === "update";
+  const esUpdate = String(accion ?? "").toLowerCase() === "modificacion";
 
   return (
     <ul className="mt-2 space-y-1">
