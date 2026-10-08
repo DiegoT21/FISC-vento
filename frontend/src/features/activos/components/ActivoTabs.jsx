@@ -1,22 +1,8 @@
 import { useState } from "react";
-import { Clock, FileText, Pencil, Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { ORIGEN_ACTIVO } from "../../../shared/utils/estado";
 import EtiquetaCodigoBarras from "./EtiquetaCodigoBarras";
-
-const fecha = (iso) =>
-  new Date(iso).toLocaleDateString("es-PA", { day: "2-digit", month: "short", year: "numeric" });
-
-function Evento({ icon: Icon, tono, titulo, detalle }) {
-  return (
-    <li className="pl-5 relative">
-      <span className={`absolute -left-[11px] top-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-4 ring-white ${tono}`}>
-        <Icon className="w-3 h-3" />
-      </span>
-      <p className="text-sm text-slate-800">{titulo}</p>
-      <p className="text-xs text-slate-500">{detalle}</p>
-    </li>
-  );
-}
+import HistorialActivo from "./HistorialActivo";
 
 const TABS = [
   ["info", "Información"],
@@ -56,14 +42,7 @@ export default function ActivoTabs({ activo }) {
           <EtiquetaCodigoBarras key={`${activo.id}-${activo.codigo}`} activo={activo} />
         </>
       )}
-      {tab === "historial" && (
-        <ol className="mt-5 relative border-l border-slate-200 ml-2 space-y-5">
-          {activo.actualizado_en !== activo.creado_en && (
-            <Evento icon={Pencil} tono="bg-fisc-100 text-fisc-800" titulo="Última modificación" detalle={fecha(activo.actualizado_en)} />
-          )}
-          <Evento icon={Clock} tono="bg-slate-100 text-slate-500" titulo="Registrado en el sistema" detalle={fecha(activo.creado_en)} />
-        </ol>
-      )}
+      {tab === "historial" && <HistorialActivo activoId={activo.id} />}
       {tab === "documentos" && (
         <div className="mt-5 flex flex-col items-center gap-2 py-8 text-center border border-dashed border-slate-200 rounded-xl">
           <span className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
