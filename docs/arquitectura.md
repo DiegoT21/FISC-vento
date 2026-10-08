@@ -5,7 +5,7 @@
 - **Backend**: Django + Django REST Framework, PostgreSQL.
 - **Frontend**: React (Vite), Tailwind CSS.
 - **Identificación de activos**: código de barras (ya existente en las placas físicas) y RFID (nuevo con este proyecto). No se usa QR — ver `docs/decisiones/0001-rfid-en-alcance.md`.
-- **Contenerización**: Docker / docker-compose (servicios `db`, `backend`, `frontend`).
+- **Contenerización**: Docker / docker-compose (servicios `db`, `backend`, `frontend`). En local es modo desarrollo; staging y producción usan Nginx y Gunicorn (`docker-compose.prod.yml`).
 - **Pruebas de carga**: Locust (`backend/loadtests/locustfile.py`).
 
 ## Despliegue: staging primero, producción con aprobación
@@ -15,6 +15,75 @@
 - **Aprobación obligatoria (configuración manual, una sola vez):** en GitHub → Settings → Environments → `production`, activar *Required reviewers* y añadir a quien deba aprobar. Sin esto, el workflow manual igualmente exige que alguien lo dispare, pero no hay segunda confirmación.
 - **Primera promoción tras este cambio:** el archivo nuevo aún no está en `main`, así que al correr el workflow elige la rama `develop` en *Use workflow from*. Desde esa promoción, `main` ya tiene la versión nueva.
 - Antes de este cambio, un push a `develop` seguía solo hasta producción; ya no.
+
+## Modo desarrollo y modo producción
+
+| | Local (`docker-compose.yml`) | Servidores (`docker-compose.prod.yml`) |
+|---|---|---|
+| Frontend | Vite, puerto 5173, código montado en vivo | Build de Vite servido por Nginx |
+| Backend | `runserver` en el puerto 8000 | Gunicorn, sin puerto publicado |
+| Settings | `config.settings.dev` (`DEBUG` encendido) | `config.settings.prod` (`DJANGO_DEBUG=0`) |
+| Base de datos | Postgres publicado en 5432 | Postgres solo en la red de Compose |
+| API | el navegador llama a `VITE_API_BASE_URL` (`:8000`) | el navegador llama a `/api` en el mismo origen y Nginx hace de proxy |
+
+Los dos compose comparten el nombre de proyecto `fisc-vento` y el volumen `postgres_data`, así que la base que ya está en el servidor se conserva al pasar al modo producción. No cambies ese `name`.
+
+Nginx (imagen del servicio `frontend`) hace esto:
+
+- `/` y el resto de rutas de la interfaz: archivos del build, con `try_files` hacia `index.html` para que recargar `/dashboard` no dé 404.
+- `/api/` y `/admin`: proxy a Gunicorn (`backend:8000`), reenviando `Host` y `X-Forwarded-Proto`.
+- `/static/`: lo que `collectstatic` dejó en un volumen compartido (CSS del admin).
+- `/.well-known/acme-challenge/`: vacío hasta que se pida un certificado.
+
+Puertos publicados en el servidor: **80** y **5173**. Los dos entran a la misma Nginx. El 5173 no es el servidor de Vite: el grupo de seguridad de AWS ya lo abre, y así la URL que ya usa el equipo sigue viva. Gunicorn y Postgres no se publican.
+
+El workflow, antes de levantar los contenedores, corre `scripts/preparar_env_produccion.sh` con la IP del secret (`STAGING_HOST` o `PROD_HOST`). Ese script solo toca `backend/.env` en el servidor (no está en git):
+
+- si `DJANGO_SECRET_KEY` falta o es la de ejemplo (`change-me`, menos de 50 caracteres), genera una y la guarda ahí, con permisos `600`;
+- si `DJANGO_ALLOWED_HOSTS` sigue siendo el de desarrollo, lo deja en esa IP más `localhost`;
+- pone `DJANGO_SECURE_SSL=0` si nadie lo definió, porque sin certificado una redirección a HTTPS dejaría el sitio inaccesible.
+
+`DJANGO_SETTINGS_MODULE` y `DJANGO_DEBUG` no dependen de ese archivo: el compose de producción los fuerza.
+
+### Qué hacer en los servidores (Diego)
+
+1. Abrir **TCP 80** en el grupo de seguridad de staging y de producción. El 5173 puede quedar. Cuando el smoke deje de imprimir el aviso del puerto 80, la URL sin puerto ya responde.
+2. Después de comprobar que el sitio carga, se pueden cerrar **8000** (ya no escucha) y **5432** (Postgres deja de publicarse). Los backups siguen entrando con `docker compose exec`.
+3. No copies la clave nueva al repo ni a un chat. Vive solo en `backend/.env` de cada servidor. Si se borra ese archivo, el próximo despliegue genera otra y se invalidan sesiones y tokens.
+4. El cron de `scripts/backup_db.sh` no hay que reescribirlo: si el stack de producción está arriba, el script usa `docker-compose.prod.yml`.
+
+### HTTPS (cuando exista un dominio)
+
+Hoy no hay dominio y la cámara del navegador no funciona en `http://IP` (solo en `localhost` o bajo HTTPS). La config ya está; no se activa sola.
+
+1. Un registro DNS `A` del dominio hacia la IP del servidor, y **TCP 443** abierto en el grupo de seguridad.
+2. Pedir el certificado (Let's Encrypt) contra el Nginx que ya está corriendo. Hay que cambiar el dominio y el correo:
+
+   ```bash
+   sudo docker compose -f docker-compose.prod.yml --profile certbot run --rm certbot \
+     certonly --webroot -w /var/www/certbot \
+     --email correo@ejemplo.com --agree-tos --no-eff-email \
+     -d app.fisc.example
+   ```
+
+3. En el servidor, copiar `frontend/nginx/ssl.conf.example` a `frontend/nginx/ssl.conf` (ese archivo está en `.gitignore`) y reemplazar `app.fisc.example` por el dominio, en `server_name` y en las dos rutas `ssl_certificate`.
+4. En `backend/.env` de ese servidor: `DJANGO_SECURE_SSL=1`, `DJANGO_ALLOWED_HOSTS=el.dominio`, `DJANGO_CSRF_TRUSTED_ORIGINS=https://el.dominio` y `DJANGO_CORS_ALLOWED_ORIGINS=https://el.dominio`. El script de despliegue no pisa estos valores si ya no son los de desarrollo.
+5. Levantar el override, que publica el 443, monta el volumen de los certificados y hace que el puerto 80 redirija a HTTPS (el reto de renovación sigue en `/.well-known/`):
+
+   ```bash
+   sudo docker compose -f docker-compose.prod.yml -f docker-compose.https.yml up -d
+   ```
+
+6. Renovar (cron, una vez al día basta). Let's Encrypt avisa solo cuando falta menos de un mes:
+
+   ```bash
+   sudo docker compose -f docker-compose.prod.yml --profile certbot run --rm certbot renew
+   sudo docker compose -f docker-compose.prod.yml -f docker-compose.https.yml exec frontend nginx -s reload
+   ```
+
+Los `.pem` quedan en el volumen Docker `letsencrypt`. No se copian al repositorio. Sin `ssl.conf` y sin ese volumen, no uses `docker-compose.https.yml`: Docker crearía una carpeta donde espera el archivo y Nginx no arrancaría.
+
+Los smoke tests siguen pidiendo `http://`. `curl` sigue la redirección, así que con el certificado válido el chequeo termina en HTTPS y en 200. Si el 443 no está abierto, el smoke falla: es la señal de que falta ese puerto.
 
 ## Backups de base de datos
 

@@ -1,0 +1,20 @@
+# Sumar al compose de producción cuando YA existe el certificado y el
+# archivo frontend/nginx/ssl.conf (copiado del example). Si ssl.conf no
+# está, Docker crea una carpeta con ese nombre y Nginx no arranca.
+#
+#   sudo docker compose -f docker-compose.prod.yml -f docker-compose.https.yml up -d
+#
+# Pasos previos: docs/arquitectura.md, sección HTTPS.
+name: fisc-vento
+
+services:
+  frontend:
+    ports:
+      - "443:443"
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+      - ./frontend/nginx/ssl.conf:/etc/nginx/conf.d/ssl.conf:ro
+      - ./frontend/nginx/http-redirect.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  letsencrypt:

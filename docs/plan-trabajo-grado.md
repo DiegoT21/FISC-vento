@@ -70,9 +70,9 @@ RF-02 pide: **REF** (correlativo interno), **número de serie**, **marca**, **mo
 | RNF-01 | Respuesta media < 300 ms | ❌ | Sin medición. Existe un `locustfile.py` con 3 escenarios. |
 | RNF-02 | ≥ 50 RPS sin degradar | ❌ | Sin medición. |
 | RNF-03 | Unicidad y campos obligatorios | ✅ | Código, número de serie, REF y RFID únicos, con errores legibles. |
-| RNF-04 | Docker + Compose | ✅ | Los 3 servicios corren en Compose. Hoy en modo desarrollo (`runserver`, Vite dev), mientras el documento describe Nginx y Gunicorn (3.4.2): igualar documento o despliegue. |
+| RNF-04 | Docker + Compose | ✅ | Local: Vite y `runserver`. Staging y producción: Nginx + Gunicorn (`docker-compose.prod.yml`), como la sección 3.4.2. Falta activar HTTPS (no hay dominio todavía). |
 | RNF-05 | Diseño responsivo | ❌ | La interfaz es solo de escritorio, por decisión documentada. El documento promete móvil y tabletas. |
-| RNF-06 | Seguridad (JWT/Session, SQLi, XSS, CSRF) | 🟡 | Django ORM y React cubren SQLi/XSS; la autenticación es por **token**, no JWT ni sesión como dice el documento (ajustar redacción). **Los servidores usan HTTP**, y el acceso a la cámara desde el navegador exige HTTPS. |
+| RNF-06 | Seguridad (JWT/Session, SQLi, XSS, CSRF) | 🟡 | Django ORM y React cubren SQLi/XSS; la autenticación es por **token**, no JWT ni sesión como dice el documento (ajustar redacción). Los servidores ya no corren en modo desarrollo, pero **siguen en HTTP** hasta tener dominio: la cámara del navegador exige HTTPS. |
 
 ### Objetivos específicos
 
@@ -121,7 +121,7 @@ SCRUM con sprints de 2–3 semanas y tablero Kanban en GitHub Projects/Trello: *
 - Completar escenarios de Locust (escaneo, filtros, reportes, login), medir latencia, RPS, percentiles y consumo (`docker stats`).
 - Decidir si se menciona JMeter y Prometheus: el documento los nombra y no hay nada en el repositorio.
 - Comparativa Excel vs. sistema (errores y tiempo de auditoría).
-- Despliegue en modo producción (Gunicorn + Nginx) para que coincida con 3.4.2.
+- Activar el HTTPS ya preparado (Nginx + Certbot) cuando haya dominio. Gunicorn y el build de Vite detrás de Nginx ya están en `docker-compose.prod.yml`.
 
 **Transversal**: responsive donde aplique (RNF-05), pruebas, documentación y el acta de cada sprint (para la metodología).
 

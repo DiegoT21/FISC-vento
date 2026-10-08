@@ -6,7 +6,10 @@
 
 **Infraestructura y despliegue**
 - Monorepo: `backend/` (Django + DRF + PostgreSQL) y `frontend/` (React +
-  Vite + Tailwind), todo con docker-compose.
+  Vite + Tailwind). En local, `docker-compose.yml` (Vite y `runserver`).
+  En staging y producción, `docker-compose.prod.yml`: build de Vite
+  servido por Nginx, Gunicorn y `DEBUG` apagado. HTTPS queda preparado
+  para cuando haya un dominio (ver [`arquitectura.md`](arquitectura.md)).
 - Pipeline: push a `develop` → tests de backend y frontend → staging →
   smoke tests HTTP y de navegador. Ahí se detiene.
 - Promoción a producción (workflow "Promover a producción"): se acciona a
@@ -168,8 +171,29 @@ revisores del entorno.
 ## URLs de los entornos
 
 - **Staging:** http://18.219.165.155:5173/ — aquí se revisa todo cambio
-  antes de promoverlo. (El backend responde en el puerto `8000`.)
-- **Producción:** la URL se la pasa Diego a Laura directamente.
+  antes de promoverlo. Es la misma Nginx del puerto 80
+  (http://18.219.165.155/ cuando el grupo de seguridad lo permita). La
+  API está en `/api` de esa misma URL; el puerto `8000` ya no se publica.
+- **Producción:** la URL se la pasa Diego a Laura directamente. Misma
+  forma: Nginx en el 80 y, mientras haga falta, en el 5173.
+
+## En los servidores (Diego)
+
+El pipeline y la promoción ya levantan `docker-compose.prod.yml`. Antes
+de que el smoke quede verde del todo:
+
+1. Abrir **TCP 80** en el grupo de seguridad de cada servidor. El 5173
+   sigue sirviendo el mismo sitio, así que la URL de arriba no depende
+   de ese cambio; el workflow avisa si el 80 todavía no responde.
+2. No hace falta inventar `DJANGO_SECRET_KEY` a mano. Si en `backend/.env`
+   sigue `change-me`, el despliegue escribe una clave nueva solo en ese
+   archivo del servidor. No la subas al repo. Si borras el `.env`, el
+   próximo despliegue genera otra y las sesiones dejan de servir.
+3. Cuando el sitio ya cargue por Nginx, se pueden cerrar los puertos
+   **8000** y **5432**. Los backups diarios no cambian de comando.
+4. HTTPS (cámara del navegador) se activa cuando exista un dominio. Los
+   pasos están en [`arquitectura.md`](arquitectura.md). Hasta entonces
+   `DJANGO_SECURE_SSL` queda en `0` y el sitio sigue en HTTP.
 
 ## Convenciones del proyecto
 
