@@ -19,7 +19,7 @@ jobs:
   promover-y-desplegar:
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 25
+    timeout-minutes: 45
     permissions:
       contents: write
       actions: read
@@ -57,18 +57,23 @@ jobs:
 
       - name: Desplegar en producción por SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_HOST: ${{ secrets.PROD_HOST }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ubuntu
           key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 25m
+          envs: DEPLOY_HOST
           script: |
             set -e
             cd FISC-vento
             git fetch origin
             git checkout main
             git reset --hard origin/main
-            sudo docker compose up -d --build
-            sudo docker compose exec -T backend python manage.py migrate --noinput
+            ./scripts/preparar_env_produccion.sh "$DEPLOY_HOST"
+            sudo docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            sudo docker compose -f docker-compose.prod.yml exec -T backend python manage.py migrate --noinput
 
       - name: Smoke test HTTP (producción)
         run: |
@@ -76,8 +81,8 @@ jobs:
           HOST="${{ secrets.PROD_HOST }}"
           check() {
             url="$1"; name="$2"; shift 2; expected_codes="$*"
-            for i in 1 2 3 4 5 6; do
-              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 15 "$url" || echo "000")
               for ok in $expected_codes; do
                 [ "$code" = "$ok" ] && echo "OK  $name -> HTTP $code" && return 0
               done
@@ -87,12 +92,20 @@ jobs:
             echo "FALLO $name -> HTTP $code (esperaba $expected_codes)"; return 1
           }
           fail=0
+          # Nginx publica 80 y, el mismo sitio, 5173. La API y el admin ya no van por :8000.
           check "http://${HOST}:5173/" "Frontend" 200 || fail=1
-          check "http://${HOST}:8000/admin/login/" "Backend admin" 200 || fail=1
+          check "http://${HOST}:5173/dashboard" "Frontend ruta interna" 200 || fail=1
+          check "http://${HOST}:5173/admin/login/" "Backend admin" 200 || fail=1
           # 403 es la respuesta correcta sin autenticar (DRF exige login).
-          check "http://${HOST}:8000/api/activos/" "Backend API" 200 403 || fail=1
+          check "http://${HOST}:5173/api/activos/" "Backend API" 200 403 || fail=1
           [ "$fail" -eq 1 ] && echo "Smoke test: servicio caído tras el deploy a PRODUCCIÓN." && exit 1
           echo "Smoke test HTTP OK: producción responde correctamente."
+          code80=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 10 "http://${HOST}/" || echo "000")
+          if [ "$code80" = "200" ]; then
+            echo "OK  puerto 80 -> HTTP $code80"
+          else
+            echo "AVISO: http://${HOST}/ respondió HTTP $code80. Nginx también está en :5173. Abrí el TCP 80 en el grupo de seguridad para usar la URL sin puerto."
+          fi
 
       - uses: actions/setup-node@v4
         with:
