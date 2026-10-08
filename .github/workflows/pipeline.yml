@@ -62,6 +62,12 @@ jobs:
     needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # Dos pushes seguidos no pueden hacer `compose up` a la vez: el segundo
+    # espera. Cancelar el que va en curso dejaba contenedores a medias
+    # ("No such container").
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
     steps:
       - name: Desplegar en staging por SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -82,6 +88,8 @@ jobs:
             ./scripts/preparar_env_produccion.sh "$DEPLOY_HOST"
             sudo docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
             sudo docker compose -f docker-compose.prod.yml exec -T backend python manage.py migrate --noinput
+            git log -1 --oneline
+            sudo docker compose -f docker-compose.prod.yml ps
 
       - name: Smoke test HTTP (staging)
         run: |
@@ -106,6 +114,27 @@ jobs:
           check "http://${HOST}:5173/dashboard" "Frontend ruta interna" 200 || fail=1
           check "http://${HOST}:5173/admin/login/" "Backend admin" 200 || fail=1
           check "http://${HOST}:5173/api/activos/" "Backend API" 200 403 || fail=1
+          # El dev server de Vite responde 200 en /@vite/client. En staging
+          # lo sirve Nginx con el build, así que esa ruta tiene que ser 404.
+          check "http://${HOST}:5173/@vite/client" "/@vite/client" 404 || fail=1
+          server_ok=0
+          server=""
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            server=$(curl -sI --max-time 15 "http://${HOST}:5173/" | tr -d '\r' | awk 'tolower($1)=="server:"{print $2; exit}')
+            case "$(printf '%s' "$server" | tr '[:upper:]' '[:lower:]')" in
+              nginx|nginx/*)
+                echo "OK  cabecera Server -> $server"
+                server_ok=1
+                break
+                ;;
+            esac
+            echo "  intento $i: cabecera Server de / -> '${server:-vacía}' (esperaba nginx), reintentando..."
+            sleep 5
+          done
+          if [ "$server_ok" -ne 1 ]; then
+            echo "FALLO cabecera Server de / -> '${server:-vacía}' (esperaba nginx)"
+            fail=1
+          fi
           [ "$fail" -eq 1 ] && exit 1 || echo "Smoke test HTTP OK"
           code80=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 10 "http://${HOST}/" || echo "000")
           if [ "$code80" = "200" ]; then

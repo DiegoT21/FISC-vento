@@ -170,9 +170,8 @@ revisores del entorno.
 
 ## URLs de los entornos
 
-- **Staging:** http://18.219.165.155:5173/ — aquí se revisa todo cambio
-  antes de promoverlo. Es la misma Nginx del puerto 80
-  (http://18.219.165.155/ cuando el grupo de seguridad lo permita). La
+- **Staging:** http://3.149.4.52/ — aquí se revisa todo cambio
+  antes de promoverlo. También responde en http://3.149.4.52:5173/. La
   API está en `/api` de esa misma URL; el puerto `8000` ya no se publica.
 - **Producción:** la URL se la pasa Diego a Laura directamente. Misma
   forma: Nginx en el 80 y, mientras haga falta, en el 5173.
@@ -183,8 +182,8 @@ El pipeline y la promoción ya levantan `docker-compose.prod.yml`. Antes
 de que el smoke quede verde del todo:
 
 1. Abrir **TCP 80** en el grupo de seguridad de cada servidor. El 5173
-   sigue sirviendo el mismo sitio, así que la URL de arriba no depende
-   de ese cambio; el workflow avisa si el 80 todavía no responde.
+   sigue sirviendo el mismo sitio. El workflow avisa si el 80 todavía
+   no responde.
 2. No hace falta inventar `DJANGO_SECRET_KEY` a mano. Si en `backend/.env`
    sigue `change-me`, el despliegue escribe una clave nueva solo en ese
    archivo del servidor. No la subas al repo. Si borras el `.env`, el
