@@ -114,9 +114,42 @@ jobs:
           check "http://${HOST}:5173/dashboard" "Frontend ruta interna" 200 || fail=1
           check "http://${HOST}:5173/admin/login/" "Backend admin" 200 || fail=1
           check "http://${HOST}:5173/api/activos/" "Backend API" 200 403 || fail=1
-          # El dev server de Vite responde 200 en /@vite/client. En staging
-          # lo sirve Nginx con el build, así que esa ruta tiene que ser 404.
-          check "http://${HOST}:5173/@vite/client" "/@vite/client" 404 || fail=1
+          # El dev server de Vite responde 200 con el módulo JS en
+          # /@vite/client (createHotContext, import.meta.hot, Content-Type
+          # javascript). Nginx, con try_files hacia index.html, responde
+          # esa misma ruta con el HTML del SPA (200, text/html): un 404
+          # sería un falso fallo.
+          no_vite=0
+          vite_detail=""
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            body=$(mktemp)
+            meta=$(curl -sS -L -o "$body" -w '%{http_code}\n%{content_type}' --max-time 15 "http://${HOST}:5173/@vite/client" || true)
+            # Sin tubería: el runner usa pipefail y head cerraría el pipe.
+            code=${meta%%$'\n'*}
+            ctype=${meta#*$'\n'}
+            html=0
+            vite_js=0
+            ctype_html=0
+            if grep -qiE '<!doctype[[:space:]]+html|<html' "$body"; then html=1; fi
+            if grep -qE 'import\.meta\.hot|createHotContext|\[vite\] connecting|@vite/client' "$body"; then vite_js=1; fi
+            case "$(printf '%s' "$ctype" | tr '[:upper:]' '[:lower:]')" in
+              *text/html*) ctype_html=1 ;;
+            esac
+            if [ "$code" = "200" ] && [ "$html" -eq 1 ] && [ "$ctype_html" -eq 1 ] && [ "$vite_js" -eq 0 ]; then
+              echo "OK  /@vite/client -> HTTP $code, HTML del SPA (Content-Type: ${ctype:-vacío}), no es el cliente de Vite"
+              no_vite=1
+              rm -f "$body"
+              break
+            fi
+            vite_detail="HTTP ${code:-vacío}, Content-Type '${ctype:-vacío}', html=${html}, parece_cliente_vite=${vite_js}"
+            echo "  intento $i: /@vite/client -> ${vite_detail}, reintentando..."
+            rm -f "$body"
+            sleep 5
+          done
+          if [ "$no_vite" -ne 1 ]; then
+            echo "FALLO /@vite/client -> ${vite_detail:-sin respuesta} (esperaba el HTML del SPA, no el módulo JS de Vite)"
+            fail=1
+          fi
           server_ok=0
           server=""
           for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
