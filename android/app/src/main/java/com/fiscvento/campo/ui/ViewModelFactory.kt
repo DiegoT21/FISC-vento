@@ -16,7 +16,7 @@ class ViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when {
         modelClass.isAssignableFrom(LoginViewModel::class.java) ->
-            LoginViewModel(container.repo, container) as T
+            LoginViewModel(container.repo, container, container.reader) as T
         modelClass.isAssignableFrom(EscaneoViewModel::class.java) ->
             EscaneoViewModel(container.repo, container.reader, feedback) as T
         modelClass.isAssignableFrom(InventarioViewModel::class.java) ->

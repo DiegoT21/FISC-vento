@@ -21,9 +21,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,9 +35,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fiscvento.campo.ui.theme.Fisc800
 import com.fiscvento.campo.ui.theme.ErrorRed
+import com.fiscvento.campo.ui.theme.Fisc700
 
 @Composable
 fun LoginScreen(
@@ -43,6 +49,23 @@ fun LoginScreen(
     onLoggedIn: () -> Unit,
 ) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // El lector queda activo en el login para poder leer el QR de vinculacion.
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewModel.onResume()
+                Lifecycle.Event.ON_PAUSE -> viewModel.onPause()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.onPause()
+        }
+    }
 
     LaunchedEffect(state.sesionRestaurada) {
         if (state.sesionRestaurada) {
@@ -74,7 +97,11 @@ fun LoginScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
+
+        PanelVinculacion(state = state, viewModel = viewModel)
+
+        Spacer(Modifier.height(20.dp))
 
         OutlinedTextField(
             value = state.serverUrl,
@@ -168,6 +195,87 @@ fun LoginScreen(
                 )
             } else {
                 Text("Entrar", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    }
+}
+
+/** Vinculacion con el QR de la web: boton, estado y alternativa de pegar/teclear el codigo. */
+@Composable
+private fun PanelVinculacion(state: LoginUiState, viewModel: LoginViewModel) {
+    state.dispositivo?.let { dispositivo ->
+        Text(
+            text = "Dispositivo vinculado: ${dispositivo.nombre}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Fisc700,
+        )
+        Spacer(Modifier.height(8.dp))
+    }
+    state.avisoVinculacion?.let { msg ->
+        Text(msg, color = Fisc700, style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(8.dp))
+    }
+
+    if (!state.mostrarVincular) {
+        OutlinedButton(
+            onClick = viewModel::abrirVincular,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+        ) {
+            Text(if (state.dispositivo == null) "Vincular con QR" else "Volver a vincular con QR")
+        }
+        return
+    }
+
+    Text(
+        text = "Apunta el lector al QR de Dispositivos en la web y presiona el gatillo.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(8.dp))
+    OutlinedTextField(
+        value = state.codigoManual,
+        onValueChange = viewModel::onCodigoManual,
+        label = { Text("O escribe el codigo de vinculacion") },
+        singleLine = true,
+        enabled = !state.vinculando,
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { viewModel.vincularManual() }),
+    )
+    state.errorVinculacion?.let { msg ->
+        Spacer(Modifier.height(8.dp))
+        Text(msg, color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
+    }
+    Spacer(Modifier.height(8.dp))
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        OutlinedButton(
+            onClick = viewModel::cerrarVincular,
+            enabled = !state.vinculando,
+            modifier = Modifier.height(48.dp),
+        ) {
+            Text("Cancelar")
+        }
+        Button(
+            onClick = viewModel::vincularManual,
+            enabled = !state.vinculando && state.codigoManual.isNotBlank(),
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp),
+        ) {
+            if (state.vinculando) {
+                CircularProgressIndicator(
+                    modifier = Modifier.height(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Text("Vincular")
             }
         }
     }
