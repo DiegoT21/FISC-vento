@@ -9,7 +9,8 @@ Origen del lector: se porta de la app Ubika (`C:\Users\diego\OneDrive\Desktop\Po
 - Nada de secretos en git (`.env`, `.pem`, `secrets.properties`, claves). No pegar secretos en logs.
 - No hagas merge ni push a `main`/`develop`. Commits en tu rama; Capi hace el push.
 - Compilar: `cd android; .\gradlew.bat :<modulo>:assembleDebug` (o `:app:assembleDebug`). Gradle ya apunta al SDK en `local.properties`.
-- Alcance de la tesis: Code 128 y lector del TC22r. NO camara, NO QR.
+- Alcance de la tesis: Code 128 y lector del TC22r. NO camara, NO QR para activos.
+- Excepcion: el QR de vinculacion del equipo (`fiscvento://vincular?u=<url>&c=<codigo>`) lo genera la web (Dispositivos) y lo lee el imager en el login. `FiscRepository.vincularDispositivo` hace `POST api/dispositivos/vincular/` (publico); `dispositivoVinculado()` devuelve el registro local.
 
 ## Modulos y duenos
 | Carpeta | Dueno | Contenido |

@@ -122,6 +122,96 @@ class RealFiscRepositoryTest {
         assertEquals("Token token-prueba", servidor.takeRequest().getHeader("Authorization"))
     }
 
+    @Test
+    fun `vincular dispositivo guarda el registro y lo envia en las siguientes peticiones`() = runTest {
+        servidor.enqueue(json(201, """
+            {"dispositivo":{"id":7,"nombre":"TC22R (a1b2)"},"token_dispositivo":"tok-dispositivo"}
+        """))
+        servidor.enqueue(json(200, activoJson(id = 4, tag = null)))
+
+        val dispositivo = repositorio.vincularDispositivo(
+            codigo = "abcde-fghjk",
+            nombre = "TC22R (a1b2)",
+            modelo = "Zebra TC22R",
+            androidId = "a1b2c3",
+        ).getOrThrow()
+
+        assertEquals(Dispositivo(7, "TC22R (a1b2)"), dispositivo)
+        assertEquals(dispositivo, repositorio.dispositivoVinculado())
+        val vinculacion = servidor.takeRequest()
+        assertEquals("POST", vinculacion.method)
+        assertEquals("/api/dispositivos/vincular/", vinculacion.path)
+        assertEquals(
+            "{\"codigo\":\"ABCDEFGHJK\",\"nombre_dispositivo\":\"TC22R (a1b2)\"," +
+                "\"modelo\":\"Zebra TC22R\",\"android_id\":\"a1b2c3\"}",
+            vinculacion.body.readUtf8(),
+        )
+        assertNull(vinculacion.getHeader("X-Dispositivo-Token"))
+
+        repositorio.lookup("ACT-0004").getOrThrow()
+        assertEquals("tok-dispositivo", servidor.takeRequest().getHeader("X-Dispositivo-Token"))
+    }
+
+    @Test
+    fun `vincular dispositivo no manda el token de sesion al endpoint publico`() = runTest {
+        servidor.enqueue(json(200, """
+            {"token":"token-viejo","usuario":{"username":"maria","rol":"CUSTODIO"}}
+        """))
+        servidor.enqueue(json(201, """
+            {"dispositivo":{"id":1,"nombre":"TC22R"},"token_dispositivo":"t"}
+        """))
+        repositorio.login("maria", "clave").getOrThrow()
+        servidor.takeRequest()
+
+        repositorio.vincularDispositivo("ABCDEFGHJK", "TC22R", "Zebra", "").getOrThrow()
+
+        assertNull(servidor.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test
+    fun `codigo de vinculacion vencido devuelve el mensaje de Django y no registra nada`() = runTest {
+        servidor.enqueue(json(400, """{"detail":"El código de vinculación no es válido o ya venció."}"""))
+
+        val resultado = repositorio.vincularDispositivo("ABCDEFGHJK", "TC22R", "Zebra", "")
+
+        assertTrue(resultado.isFailure)
+        assertEquals("El código de vinculación no es válido o ya venció.", resultado.exceptionOrNull()?.message)
+        assertNull(repositorio.dispositivoVinculado())
+    }
+
+    @Test
+    fun `codigo demasiado corto ni siquiera llega al servidor`() = runTest {
+        val resultado = repositorio.vincularDispositivo("abc", "TC22R", "Zebra", "")
+
+        assertTrue(resultado.isFailure)
+        assertEquals(0, servidor.requestCount)
+    }
+
+    @Test
+    fun `dispositivo desvinculado por el administrador borra el registro y la sesion`() = runTest {
+        servidor.enqueue(json(201, """
+            {"dispositivo":{"id":7,"nombre":"TC22R"},"token_dispositivo":"tok"}
+        """))
+        servidor.enqueue(json(200, """
+            {"token":"token-prueba","usuario":{"username":"maria","rol":"CUSTODIO"}}
+        """))
+        servidor.enqueue(json(403, """
+            {"detail":"Este dispositivo fue desvinculado. Vuelve a vincularlo con un QR.","codigo":"dispositivo_revocado"}
+        """))
+        repositorio.vincularDispositivo("ABCDEFGHJK", "TC22R", "Zebra", "").getOrThrow()
+        repositorio.login("maria", "clave").getOrThrow()
+
+        val resultado = repositorio.lookup("ACT-0001")
+
+        assertTrue(resultado.isFailure)
+        assertEquals(
+            "Este dispositivo fue desvinculado. Vuelve a vincularlo con un QR.",
+            resultado.exceptionOrNull()?.message,
+        )
+        assertNull(repositorio.dispositivoVinculado())
+        assertNull(repositorio.restoreSession())
+    }
+
     private fun json(codigo: Int, cuerpo: String): MockResponse = MockResponse()
         .setResponseCode(codigo)
         .setHeader("Content-Type", "application/json")

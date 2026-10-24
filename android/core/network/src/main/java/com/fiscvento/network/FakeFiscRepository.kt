@@ -4,6 +4,7 @@ package com.fiscvento.network
 class FakeFiscRepository : FiscRepository {
     private var url = "http://3.149.4.52/"
     private var session: Session? = null
+    private var dispositivo: Dispositivo? = null
     private val activos = mutableListOf(
         Activo(1, "ACT-0001", "Laptop (ejemplo)", "disponible", "Oficina", "E2801170000001"),
         Activo(2, "ACT-0002", "Proyector (ejemplo)", "disponible", "Sala 2", null),
@@ -28,6 +29,18 @@ class FakeFiscRepository : FiscRepository {
         if (activos.any { it.tagRfid == epc && it.id != activoId }) return Result.failure(IllegalStateException("Ese tag ya pertenece a otro activo"))
         activos[i] = activos[i].copy(tagRfid = epc); return Result.success(activos[i])
     }
+    override suspend fun vincularDispositivo(
+        codigo: String,
+        nombre: String,
+        modelo: String,
+        androidId: String,
+    ): Result<Dispositivo> =
+        if (VinculacionQr.normalizarCodigo(codigo) == null) {
+            Result.failure(IllegalArgumentException("El código de vinculación no es válido o ya venció."))
+        } else {
+            Result.success(Dispositivo(1, nombre).also { dispositivo = it })
+        }
+    override fun dispositivoVinculado(): Dispositivo? = dispositivo
     override suspend fun desasociarTag(activoId: Int): Result<Activo> {
         val i = activos.indexOfFirst { it.id == activoId }
         if (i < 0) return Result.failure(IllegalArgumentException("Activo no existe"))

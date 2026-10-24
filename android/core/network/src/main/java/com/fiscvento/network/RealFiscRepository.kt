@@ -32,6 +32,7 @@ import retrofit2.http.Query
 class RealFiscRepository private constructor(
     private val servidorGuardado: AlmacenServidor,
     private val sesionGuardada: AlmacenSesion,
+    private val dispositivoGuardado: AlmacenDispositivo,
     defaultUrl: String,
 ) : FiscRepository {
 
@@ -42,18 +43,19 @@ class RealFiscRepository private constructor(
 
     private var urlActual: String = recuperarUrl(defaultUrl)
     private var sesion: Session? = sesionGuardada.leer()
+    private var registro: RegistroDispositivo? = dispositivoGuardado.leer()
 
     private val clienteHttp = OkHttpClient.Builder()
         .addInterceptor(Interceptor { cadena ->
+            val constructor = cadena.request().newBuilder()
+            // El canje del QR es publico: un token viejo haria que DRF lo rechace.
+            val esVinculacion = cadena.request().url.encodedPath.endsWith(RUTA_VINCULAR)
             val token = sesion?.token
-            val solicitud = if (token.isNullOrBlank()) {
-                cadena.request()
-            } else {
-                cadena.request().newBuilder()
-                    .header("Authorization", "Token $token")
-                    .build()
+            if (!token.isNullOrBlank() && !esVinculacion) {
+                constructor.header("Authorization", "Token $token")
             }
-            cadena.proceed(solicitud)
+            registro?.token?.let { constructor.header("X-Dispositivo-Token", it) }
+            cadena.proceed(constructor.build())
         })
         .build()
 
@@ -61,7 +63,10 @@ class RealFiscRepository private constructor(
         servidorGuardado = PreferenciasServidor(
             context.getSharedPreferences(PREFERENCIAS_SERVIDOR, Context.MODE_PRIVATE),
         ),
-        sesionGuardada = PreferenciasSesion(crearPreferenciasCifradas(context)),
+        sesionGuardada = PreferenciasSesion(crearPreferenciasCifradas(context, PREFERENCIAS_SESION)),
+        dispositivoGuardado = PreferenciasDispositivo(
+            crearPreferenciasCifradas(context, PREFERENCIAS_DISPOSITIVO),
+        ),
         defaultUrl = defaultUrl,
     )
 
@@ -69,6 +74,7 @@ class RealFiscRepository private constructor(
     internal constructor(defaultUrl: String) : this(
         servidorGuardado = ServidorEnMemoria(),
         sesionGuardada = SesionEnMemoria(),
+        dispositivoGuardado = DispositivoEnMemoria(),
         defaultUrl = defaultUrl,
     )
 
@@ -152,6 +158,33 @@ class RealFiscRepository private constructor(
             api().actualizarTag(activoId, TagRfidRequestDto(null))
         }.map(ActivoDto::aModelo)
 
+    override suspend fun vincularDispositivo(
+        codigo: String,
+        nombre: String,
+        modelo: String,
+        androidId: String,
+    ): Result<Dispositivo> {
+        val codigoLimpio = VinculacionQr.normalizarCodigo(codigo)
+            ?: return Result.failure(ErrorApi("El código de vinculación no es válido."))
+        return ejecutar {
+            api().vincular(
+                VincularRequestDto(
+                    codigo = codigoLimpio,
+                    nombreDispositivo = nombre.trim().take(100),
+                    modelo = modelo.trim().take(100),
+                    androidId = androidId.trim().take(64),
+                ),
+            )
+        }.map { respuesta ->
+            Dispositivo(respuesta.dispositivo.id, respuesta.dispositivo.nombre).also { nuevo ->
+                registro = RegistroDispositivo(nuevo, respuesta.tokenDispositivo)
+                dispositivoGuardado.guardar(registro!!)
+            }
+        }
+    }
+
+    override fun dispositivoVinculado(): Dispositivo? = registro?.dispositivo
+
     private fun recuperarUrl(defaultUrl: String): String {
         val predeterminada = normalizarUrl(defaultUrl)
         val guardada = servidorGuardado.leer()?.let(::urlNormalizadaONull)
@@ -195,11 +228,17 @@ class RealFiscRepository private constructor(
 
     private fun errorDeRespuesta(respuesta: Response<*>): ErrorApi {
         if (respuesta.code() == 401) logout()
-        return ErrorApi(mensajeError(respuesta.errorBody()))
+        val texto = respuesta.errorBody()?.string().orEmpty()
+        if (respuesta.code() == 403 && texto.contains(CODIGO_DISPOSITIVO_REVOCADO)) {
+            // Un administrador desvinculo este equipo: se borra el registro y la sesion.
+            registro = null
+            dispositivoGuardado.borrar()
+            logout()
+        }
+        return ErrorApi(mensajeError(texto))
     }
 
-    private fun mensajeError(cuerpo: ResponseBody?): String {
-        val texto = cuerpo?.string().orEmpty()
+    private fun mensajeError(texto: String): String {
         if (texto.isBlank()) return "No se pudo completar la solicitud. Intenta de nuevo."
 
         return runCatching {
@@ -252,6 +291,14 @@ class RealFiscRepository private constructor(
         fun borrar()
     }
 
+    private interface AlmacenDispositivo {
+        fun leer(): RegistroDispositivo?
+        fun guardar(registro: RegistroDispositivo)
+        fun borrar()
+    }
+
+    private class RegistroDispositivo(val dispositivo: Dispositivo, val token: String)
+
     private class PreferenciasServidor(
         private val preferencias: SharedPreferences,
     ) : AlmacenServidor {
@@ -287,6 +334,42 @@ class RealFiscRepository private constructor(
         }
     }
 
+    private class PreferenciasDispositivo(
+        private val preferencias: SharedPreferences,
+    ) : AlmacenDispositivo {
+        override fun leer(): RegistroDispositivo? {
+            val token = preferencias.getString(CLAVE_DISPOSITIVO_TOKEN, null)
+            val nombre = preferencias.getString(CLAVE_DISPOSITIVO_NOMBRE, null)
+            val id = preferencias.getInt(CLAVE_DISPOSITIVO_ID, -1)
+            return if (token.isNullOrBlank() || nombre.isNullOrBlank() || id < 0) null else {
+                RegistroDispositivo(Dispositivo(id, nombre), token)
+            }
+        }
+
+        override fun guardar(registro: RegistroDispositivo) {
+            preferencias.edit()
+                .putInt(CLAVE_DISPOSITIVO_ID, registro.dispositivo.id)
+                .putString(CLAVE_DISPOSITIVO_NOMBRE, registro.dispositivo.nombre)
+                .putString(CLAVE_DISPOSITIVO_TOKEN, registro.token)
+                .apply()
+        }
+
+        override fun borrar() {
+            preferencias.edit().clear().apply()
+        }
+    }
+
+    private class DispositivoEnMemoria : AlmacenDispositivo {
+        private var registro: RegistroDispositivo? = null
+        override fun leer(): RegistroDispositivo? = registro
+        override fun guardar(registro: RegistroDispositivo) {
+            this.registro = registro
+        }
+        override fun borrar() {
+            registro = null
+        }
+    }
+
     private class ServidorEnMemoria : AlmacenServidor {
         private var url: String? = null
         override fun leer(): String? = url
@@ -314,6 +397,23 @@ class RealFiscRepository private constructor(
 
     @Serializable
     private data class UsuarioDto(val username: String, val rol: String? = null)
+
+    @Serializable
+    private data class VincularRequestDto(
+        val codigo: String,
+        @SerialName("nombre_dispositivo") val nombreDispositivo: String,
+        val modelo: String,
+        @SerialName("android_id") val androidId: String,
+    )
+
+    @Serializable
+    private data class DispositivoDto(val id: Int, val nombre: String)
+
+    @Serializable
+    private data class VincularResponseDto(
+        val dispositivo: DispositivoDto,
+        @SerialName("token_dispositivo") val tokenDispositivo: String,
+    )
 
     @Serializable
     private data class LookupRequestDto(val valor: String)
@@ -348,6 +448,9 @@ class RealFiscRepository private constructor(
         @POST("api/usuarios/login/")
         suspend fun login(@Body datos: LoginRequestDto): Response<LoginResponseDto>
 
+        @POST("api/dispositivos/vincular/")
+        suspend fun vincular(@Body datos: VincularRequestDto): Response<VincularResponseDto>
+
         @POST("api/escaneo/escanear/")
         suspend fun lookup(@Body datos: LookupRequestDto): Response<ActivoDto>
 
@@ -373,6 +476,12 @@ class RealFiscRepository private constructor(
     private companion object {
         const val PREFERENCIAS_SERVIDOR = "fisc_servidor"
         const val PREFERENCIAS_SESION = "fisc_sesion"
+        const val PREFERENCIAS_DISPOSITIVO = "fisc_dispositivo"
+        const val RUTA_VINCULAR = "api/dispositivos/vincular/"
+        const val CODIGO_DISPOSITIVO_REVOCADO = "dispositivo_revocado"
+        const val CLAVE_DISPOSITIVO_ID = "id"
+        const val CLAVE_DISPOSITIVO_NOMBRE = "nombre"
+        const val CLAVE_DISPOSITIVO_TOKEN = "token"
         const val CLAVE_SERVIDOR = "url"
         const val CLAVE_TOKEN = "token"
         const val CLAVE_USUARIO = "usuario"
@@ -380,13 +489,13 @@ class RealFiscRepository private constructor(
         val CONTENIDO_JSON = "application/json".toMediaType()
 
         @Suppress("DEPRECATION")
-        fun crearPreferenciasCifradas(context: Context): SharedPreferences {
+        fun crearPreferenciasCifradas(context: Context, nombre: String): SharedPreferences {
             val llave = MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                 .build()
             return EncryptedSharedPreferences.create(
                 context,
-                PREFERENCIAS_SESION,
+                nombre,
                 llave,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
