@@ -52,9 +52,21 @@ El workflow, antes de levantar los contenedores, corre `scripts/preparar_env_pro
 3. No copies la clave nueva al repo ni a un chat. Vive solo en `backend/.env` de cada servidor. Si se borra ese archivo, el próximo despliegue genera otra y se invalidan sesiones y tokens.
 4. El cron de `scripts/backup_db.sh` no hay que reescribirlo: si el stack de producción está arriba, el script usa `docker-compose.prod.yml`.
 
+## Aplicación instalable (PWA)
+
+El build de producción es una PWA (`vite-plugin-pwa` / Workbox). El manifiesto y el service worker salen de `frontend/vite.config.js`. Los iconos salen del sello de la FISC embebido en `Sidebar.jsx` (`frontend/public/pwa-*.png`, `maskable-*.png`, `apple-touch-icon.png`).
+
+- **Qué se cachea:** el shell (`index.html`, JS y CSS con hash) y los iconos. Así la interfaz abre rápido y la app instalada arranca aunque la red vaya justa.
+- **Qué no se cachea:** `/api/`, `/admin` y `/static/` van con `NetworkOnly`. No hay modo offline: sin red se ve el shell y el error de conexión que ya existía. El token sigue en `localStorage`, no en la caché del service worker.
+- **Actualización:** aviso «Hay una versión nueva» con *Actualizar* / *Después*. No recarga sola, para no cortar una lectura del Zebra a mitad del código. Al volver a la pestaña, y cada hora, el cliente pide `sw.js` de nuevo. Nginx no deja caché larga en `sw.js`, `manifest.webmanifest` ni `index.html` (`frontend/nginx/snippets/app-locations.conf`). El fallback SPA (`try_files` → `index.html`) no cambia.
+- **Instalar:** en Chrome/Edge (contexto seguro) aparece «Instalar app». En Safari iOS, un aviso de Compartir → Añadir a inicio. No hay cámara ni QR. El aviso no toma el foco: el lector tipo teclado sigue escribiendo en el campo de escaneo.
+- **Dónde se puede instalar:** en `localhost` y bajo HTTPS. En `http://` de una IP el navegador no registra el service worker y el sitio sigue igual. Staging hoy está en HTTP; los pasos y lo que falta decidir están en `docs/https-staging.md`.
+
+En desarrollo (`npm run dev`) el service worker está apagado. Para probarlo: `npm run build` y `npm run preview`, o el contenedor Nginx.
+
 ### HTTPS (cuando exista un dominio)
 
-Hoy no hay dominio y la cámara del navegador no funciona en `http://IP` (solo en `localhost` o bajo HTTPS). La config ya está; no se activa sola.
+Hoy no hay dominio. Sin HTTPS la PWA no se instala fuera de `localhost` (y, si más adelante se retomara, la cámara del navegador tampoco funciona en `http://IP`). La config ya está; no se activa sola. El paso a paso corto para staging, con lo que falta decidir, está en `docs/https-staging.md`.
 
 1. Un registro DNS `A` del dominio hacia la IP del servidor, y **TCP 443** abierto en el grupo de seguridad.
 2. Pedir el certificado (Let's Encrypt) contra el Nginx que ya está corriendo. Hay que cambiar el dominio y el correo:

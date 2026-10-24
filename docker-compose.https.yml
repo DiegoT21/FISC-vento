@@ -4,7 +4,8 @@
 #
 #   sudo docker compose -f docker-compose.prod.yml -f docker-compose.https.yml up -d
 #
-# Pasos previos: docs/arquitectura.md, sección HTTPS.
+# Pasos y lo que falta decidir para staging: docs/https-staging.md
+# Detalle: docs/arquitectura.md, sección HTTPS.
 name: fisc-vento
 
 services:

@@ -70,7 +70,7 @@ RF-02 pide: **REF** (correlativo interno), **número de serie**, **marca**, **mo
 | RNF-01 | Respuesta media < 300 ms | ❌ | Sin medición. Existe un `locustfile.py` con 3 escenarios. |
 | RNF-02 | ≥ 50 RPS sin degradar | ❌ | Sin medición. |
 | RNF-03 | Unicidad y campos obligatorios | ✅ | Código, número de serie, REF y RFID únicos, con errores legibles. |
-| RNF-04 | Docker + Compose | ✅ | Local: Vite y `runserver`. Staging y producción: Nginx + Gunicorn (`docker-compose.prod.yml`), como la sección 3.4.2. Falta activar HTTPS (no hay dominio todavía). |
+| RNF-04 | Docker + Compose | ✅ | Local: Vite y `runserver`. Staging y producción: Nginx + Gunicorn (`docker-compose.prod.yml`), como la sección 3.4.2. El frontend de producción es una PWA (shell cacheado, sin caché de `/api`). Falta activar HTTPS para poder instalarla fuera de localhost (no hay dominio todavía; `docs/https-staging.md`). |
 | RNF-05 | Diseño responsivo | ❌ | La interfaz es solo de escritorio, por decisión documentada. El documento promete móvil y tabletas. |
 | RNF-06 | Seguridad (JWT/Session, SQLi, XSS, CSRF) | 🟡 | Django ORM y React cubren SQLi/XSS; la autenticación es por **token**, no JWT ni sesión como dice el documento (ajustar redacción). Los servidores ya no corren en modo desarrollo, pero **siguen en HTTP** hasta tener dominio: la cámara del navegador exige HTTPS. |
 
@@ -82,7 +82,7 @@ RF-02 pide: **REF** (correlativo interno), **número de serie**, **marca**, **mo
 | II Investigar captura | 🟡 | Redactado, pero habla de QR (D1). |
 | III Diseñar arquitectura y modelo | 🟡 | El E-R del documento y el modelo real divergen (D2, D4). |
 | IV Backend Django | 🟡 | Núcleo hecho; faltan auditoría completa, documentos, traslados/préstamos. |
-| V Interfaz React web y móvil | 🟡 | Activos, ubicaciones y panel reales; escaneo, préstamos, documentos y móvil pendientes. |
+| V Interfaz React web y móvil | 🟡 | Activos, ubicaciones y panel reales; escaneo, préstamos, documentos y móvil pendientes. El build se puede instalar como PWA; el diseño sigue siendo de escritorio (RNF-05). |
 | VI Docker | ✅ | Además hay CI/CD con staging y producción y backups, que el documento no menciona y conviene citar. |
 | VII Pruebas de carga | ❌ | Capítulo IV vacío. |
 
@@ -108,7 +108,7 @@ SCRUM con sprints de 2–3 semanas y tablero Kanban en GitHub Projects/Trello: *
 
 **Sprint 3 — Escaneo real** (RF-05, parte de RNF-05)
 - Lectura por cámara y modo RFID (lector tipo teclado).
-- **HTTPS en staging y producción** (requisito de la cámara).
+- **HTTPS en staging y producción** (hace falta para instalar la PWA; también lo pediría la cámara). Pasos y decisiones pendientes: `docs/https-staging.md`. Esta entrega no añade cámara ni QR.
 - Diseño adaptado a móvil para esta pantalla.
 - Resultado de la verificación → `estatus` (D2).
 
