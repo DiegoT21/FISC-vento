@@ -13,7 +13,7 @@ import { mensajeDeError } from "../../shared/utils/errores";
 import { useApi } from "../../shared/hooks/useApi";
 import { useRole } from "../../shared/hooks/useRole";
 
-const inputCls = "text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-800 outline-none focus:border-fisc-600";
+const inputCls = "w-full min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:border-fisc-600";
 
 function mensajeError(err) {
   // unique_together (departamento, nombre) llega como non_field_errors.
@@ -40,15 +40,17 @@ function FormNombre({ placeholder, etiquetaBoton, onCrear, onCancelar, inicial =
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-1 flex-1">
-      <div className="flex gap-2">
-        <input autoFocus required maxLength={150} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={placeholder} className={`${inputCls} flex-1`} />
-        <button type="submit" disabled={guardando} className="bg-fisc-800 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
-          {guardando ? "Guardando..." : etiquetaBoton}
-        </button>
-        <button type="button" onClick={onCancelar} className="text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
-          Cancelar
-        </button>
+    <form onSubmit={enviar} className="space-y-1 w-full min-w-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input autoFocus required maxLength={150} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={placeholder} className={`${inputCls} min-w-0 sm:flex-1`} />
+        <div className="flex gap-2">
+          <button type="submit" disabled={guardando} className="min-h-11 flex-1 sm:flex-none bg-fisc-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
+            {guardando ? "Guardando..." : etiquetaBoton}
+          </button>
+          <button type="button" onClick={onCancelar} className="min-h-11 flex-1 sm:flex-none text-sm px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
+            Cancelar
+          </button>
+        </div>
       </div>
       {error && <p className="text-xs text-red-700">{error}</p>}
     </form>
@@ -80,10 +82,10 @@ function FilaNombre({ clave, nombre, icono, claseTexto, puedeEditar, estado, acc
         </span>
         {puedeEditar && confirmando !== clave && (
           <span className="flex items-center gap-1 text-slate-400">
-            <button onClick={() => { setEditando(clave); setConfirmando(null); }} title="Renombrar" aria-label={`Renombrar ${nombre}`} className="p-1 rounded hover:bg-slate-100 hover:text-slate-700">
+            <button onClick={() => { setEditando(clave); setConfirmando(null); }} title="Renombrar" aria-label={`Renombrar ${nombre}`} className="min-w-11 min-h-11 inline-flex items-center justify-center rounded hover:bg-slate-100 hover:text-slate-700">
               <Pencil size={14} />
             </button>
-            <button onClick={() => { setConfirmando(clave); setErrorBorrado(""); setEditando(null); }} title="Eliminar" aria-label={`Eliminar ${nombre}`} className="p-1 rounded hover:bg-red-50 hover:text-red-700">
+            <button onClick={() => { setConfirmando(clave); setErrorBorrado(""); setEditando(null); }} title="Eliminar" aria-label={`Eliminar ${nombre}`} className="min-w-11 min-h-11 inline-flex items-center justify-center rounded hover:bg-red-50 hover:text-red-700">
               <Trash2 size={14} />
             </button>
           </span>
@@ -139,13 +141,13 @@ export default function UbicacionesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Ubicaciones</h1>
           <p className="text-sm text-slate-500 mt-1">Estructura por departamentos y espacios físicos</p>
         </div>
         {puedeEditar && !nuevoDepto && (
-          <button onClick={() => setNuevoDepto(true)} className="bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30">
+          <button onClick={() => setNuevoDepto(true)} className="self-start min-h-11 bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30">
             + Nuevo departamento
           </button>
         )}
@@ -181,7 +183,7 @@ export default function UbicacionesPage() {
       <div className="space-y-3">
         {departamentos.map((d) => (
           <div key={d.id} className="bg-white rounded-xl border border-slate-200/80 shadow-sm">
-            <div className="px-4 py-2.5 border-b border-slate-100 flex items-start justify-between gap-3">
+            <div className="px-4 py-2.5 border-b border-slate-100 flex flex-wrap items-start justify-between gap-2">
               <FilaNombre
                 clave={`d:${d.id}`}
                 nombre={d.nombre}
@@ -192,7 +194,7 @@ export default function UbicacionesPage() {
                 detalleBorrado=" Solo se puede si no tiene ubicaciones en uso."
               />
               {puedeEditar && deptoAbierto !== d.id && editando !== `d:${d.id}` && confirmando !== `d:${d.id}` && (
-                <button onClick={() => setDeptoAbierto(d.id)} className="text-sm text-fisc-800 hover:underline whitespace-nowrap">+ Agregar ubicación</button>
+                <button onClick={() => setDeptoAbierto(d.id)} className="min-h-11 text-sm text-fisc-800 hover:underline whitespace-nowrap">+ Agregar ubicación</button>
               )}
             </div>
             <div className="divide-y divide-slate-100">

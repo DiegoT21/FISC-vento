@@ -15,12 +15,13 @@ export default function ActivoTabs({ activo }) {
 
   return (
     <>
-      <div className="flex gap-1 mt-5 border-b border-slate-100">
+      <div className="flex gap-1 mt-5 border-b border-slate-100 overflow-x-auto">
         {TABS.map(([id, label]) => (
           <button
             key={id}
+            type="button"
             onClick={() => setTab(id)}
-            className={`px-3 py-2 text-sm border-b-2 -mb-px ${tab === id ? "border-fisc-700 text-fisc-800 font-medium" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+            className={`px-3 min-h-11 text-sm border-b-2 -mb-px whitespace-nowrap ${tab === id ? "border-fisc-700 text-fisc-800 font-medium" : "border-transparent text-slate-500 hover:text-slate-700"}`}
           >
             {label}
           </button>
@@ -29,7 +30,7 @@ export default function ActivoTabs({ activo }) {
 
       {tab === "info" && (
         <>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
             <div><p className="text-slate-400 text-xs">Categoría</p><p className="text-slate-800">{activo.categoria_nombre}</p></div>
             <div><p className="text-slate-400 text-xs">Origen</p><p className="text-slate-800">{ORIGEN_ACTIVO[activo.origen] ?? "—"}</p></div>
             <div><p className="text-slate-400 text-xs">Ubicación</p><p className="text-slate-800">{activo.departamento_nombre} / {activo.ubicacion_nombre}</p></div>

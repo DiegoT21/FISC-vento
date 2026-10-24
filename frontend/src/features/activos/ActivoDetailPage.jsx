@@ -58,7 +58,7 @@ export default function ActivoDetailPage() {
   return (
     <div className="space-y-4">
       {volver}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h2 className="text-base font-medium text-slate-900">{activo.descripcion}</h2>
@@ -67,12 +67,12 @@ export default function ActivoDetailPage() {
           <div className="flex items-center gap-2">
             <Badge tone={estadoTone(activo.estado)}>{ESTADO_ACTIVO[activo.estado] ?? activo.estado}</Badge>
             {puedeEditar && (
-              <button onClick={() => navigate(`/dashboard/activos/${id}/editar`)} className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
+              <button onClick={() => navigate(`/dashboard/activos/${id}/editar`)} className="inline-flex min-h-11 items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
                 <Pencil size={14} /> Editar
               </button>
             )}
             {puedeBorrar && !confirmando && (
-              <button onClick={() => setConfirmando(true)} className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50">
+              <button onClick={() => setConfirmando(true)} className="inline-flex min-h-11 items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50">
                 <Trash2 size={14} /> Eliminar
               </button>
             )}

@@ -44,7 +44,7 @@ export default function EtiquetaCodigoBarras({ activo }) {
       {!error && !url && <p className="text-sm text-slate-500">Generando...</p>}
       {url && (
         <div className="flex items-end gap-4 flex-wrap">
-          <img src={url} alt={`Código de barras de ${activo.codigo}`} className="border border-slate-200 rounded bg-white p-2 max-h-32" />
+          <img src={url} alt={`Código de barras de ${activo.codigo}`} className="border border-slate-200 rounded bg-white p-2 max-h-32 max-w-full h-auto" />
           <div className="flex gap-2">
             <a
               href={url}

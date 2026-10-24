@@ -19,9 +19,31 @@ export default function EscaneoPage() {
   const [resultado, setResultado] = useState(null);
 
   // Los lectores de mano y de RFID se comportan como un teclado: escriben el código y pulsan Enter.
+  // inputMode=none y virtualkeyboardpolicy=manual evitan el teclado en pantalla del celular/Zebra.
   useEffect(() => {
-    inputRef.current?.focus();
+    const campo = inputRef.current;
+    if (campo) campo.setAttribute("virtualkeyboardpolicy", "manual");
+    campo?.focus({ preventScroll: true });
   }, [mode]);
+
+  // Si el foco cae en el fondo (o en un control que ya se ocultó, como el menú),
+  // el lector vuelve al campo. Un botón o enlace visible sí puede quedarse con él.
+  useEffect(() => {
+    function recuperar() {
+      window.setTimeout(() => {
+        const campo = inputRef.current;
+        if (!campo?.isConnected) return;
+        const destino = document.activeElement;
+        const visible = destino instanceof Element
+          && destino !== document.body
+          && destino.getClientRects().length > 0;
+        const esControl = visible && Boolean(destino.closest("a, button, input, select, textarea, label, [role='tab']"));
+        if (!esControl) campo.focus({ preventScroll: true });
+      }, 30);
+    }
+    document.addEventListener("focusout", recuperar);
+    return () => document.removeEventListener("focusout", recuperar);
+  }, []);
 
   async function buscar(valor) {
     const lectura = valor.trim();
@@ -63,17 +85,18 @@ export default function EscaneoPage() {
         {MODOS.map(([id, label, Icon]) => (
           <button
             key={id}
+            type="button"
             role="tab"
             aria-selected={mode === id}
             onClick={() => { setMode(id); setResultado(null); }}
-            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${mode === id ? "bg-fisc-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
+            className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-2 py-2 text-center text-xs font-medium leading-tight transition-colors sm:text-sm ${mode === id ? "bg-fisc-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"}`}
           >
-            <Icon className="w-4 h-4" /> {label}
+            <Icon className="w-4 h-4 shrink-0" /> {label}
           </button>
         ))}
       </div>
 
-      <div className="border-2 border-dashed border-fisc-200 bg-fisc-50/50 rounded-xl p-8 text-center">
+      <div className="border-2 border-dashed border-fisc-200 bg-fisc-50/50 rounded-xl p-4 sm:p-8 text-center">
         <div className="w-12 h-12 rounded-full bg-fisc-100 text-fisc-800 flex items-center justify-center mx-auto mb-3">
           {mode === "barras" ? <ScanLine className="w-6 h-6" /> : <Radio className="w-6 h-6" />}
         </div>
@@ -91,19 +114,24 @@ export default function EscaneoPage() {
             ref={inputRef}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
+            inputMode="none"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="off"
             aria-label={mode === "barras" ? "Código de barras" : "Tag RFID"}
             placeholder={mode === "barras" ? "SVT-118423" : "RF-000123"}
-            className="flex-1 min-w-0 font-mono text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-fisc-500 focus:ring-2 focus:ring-fisc-500/20"
+            className="min-h-12 flex-1 min-w-0 font-mono text-base md:text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-fisc-500 focus:ring-2 focus:ring-fisc-500/20"
           />
           <button
             type="submit"
             disabled={buscando || !codigo.trim()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30 disabled:opacity-50"
+            className="inline-flex min-h-12 items-center gap-2 px-4 py-2 bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30 disabled:opacity-50"
           >
             Buscar
           </button>
         </form>
-        <button onClick={simular} disabled={buscando} className="mt-3 text-xs font-medium text-fisc-800 hover:text-fisc-700 disabled:opacity-50">
+        <button type="button" onClick={simular} disabled={buscando} className="mt-3 min-h-11 px-3 text-xs font-medium text-fisc-800 hover:text-fisc-700 disabled:opacity-50">
           Simular lectura
         </button>
       </div>
@@ -111,7 +139,7 @@ export default function EscaneoPage() {
       {activo && (
         <button
           onClick={() => navigate(`/dashboard/activos/${activo.id}`)}
-          className="w-full text-left bg-white border border-fisc-300/60 rounded-xl shadow-sm p-4 flex items-center gap-3 hover:bg-fisc-50/60 transition-colors"
+          className="w-full text-left bg-white border border-fisc-300/60 rounded-xl shadow-sm p-4 flex items-center gap-3 min-h-12 hover:bg-fisc-50/60 transition-colors"
         >
           <span className="w-9 h-9 rounded-full bg-fisc-100 text-fisc-800 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />

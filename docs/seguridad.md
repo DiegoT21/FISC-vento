@@ -40,8 +40,8 @@ Prioridad alta, porque los servidores son lo que expone el sistema:
 
 ## Limitaciones conocidas
 
-- El token de sesión se guarda en `localStorage`: ante un XSS, un atacante podría leerlo. No hay XSS conocido (React escapa el contenido y las pruebas vigilan las APIs peligrosas), pero conviene migrar a cookie `HttpOnly` si se añade contenido enriquecido. El service worker de la PWA no copia ese token ni las respuestas de `/api`.
-- Los tokens no caducan; solo mueren al cerrar sesión o desactivar al usuario.
+- El token no es una cookie `HttpOnly`. Con «Recordar este dispositivo» queda en `localStorage` y sobrevive a cerrar el navegador; si no se marca, va en una cookie de sesión (sin `Expires`, `SameSite=Lax`, `Secure` solo en HTTPS) que el navegador borra al cerrarse. En ambos casos el cliente la lee para el header `Authorization`. Ante un XSS, un script podría leer el token. No hay XSS conocido (React escapa el contenido y las pruebas vigilan las APIs peligrosas). La contraseña no se guarda. El service worker de la PWA no copia el token ni las respuestas de `/api`.
+- Los tokens caducan a los 30 días del último ingreso (`TokenConVigencia`, sobre `Token.created`). Cerrar sesión o desactivar al usuario también los invalida. Hay un solo token por usuario: un ingreso nuevo reinicia el plazo en todos los dispositivos que compartan esa clave.
 - El límite de intentos usa la caché del proceso: con varios workers cada uno cuenta por separado.
 - Las pruebas corren con SQLite en local y con PostgreSQL en el CI; no se probó contra PostgreSQL localmente.
 - No se hizo una prueba de penetración sobre los servidores desplegados; solo pruebas automatizadas sobre el código.

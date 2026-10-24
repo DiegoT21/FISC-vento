@@ -10,7 +10,7 @@ import { useRole } from "../../shared/hooks/useRole";
 
 const PAGE_SIZE = 25;
 const SIN_FILTROS = { categoria: "", estado: "", origen: "", ubicacion: "" };
-const selectCls = "text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700";
+const selectCls = "text-base sm:text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 min-h-11 max-w-full w-full sm:w-auto";
 
 export default function ActivosListPage() {
   const navigate = useNavigate();
@@ -54,20 +54,20 @@ export default function ActivosListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Activos</h1>
           <p className="text-sm text-slate-500 mt-1">{cargando && !data ? "Cargando..." : `${total} activos`}</p>
         </div>
         {role !== "Auditor" && (
-          <button onClick={() => navigate("/dashboard/activos/nuevo")} className="bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30">+ Registrar activo</button>
+          <button onClick={() => navigate("/dashboard/activos/nuevo")} className="self-start min-h-11 bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30">+ Registrar activo</button>
         )}
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-          <Search size={15} className="text-slate-400" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por descripción, código, REF, serie, marca o modelo..." className="text-sm outline-none w-full text-slate-700" />
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 min-h-11">
+          <Search size={15} className="text-slate-400 shrink-0" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por descripción, código, REF, serie, marca o modelo..." className="text-base sm:text-sm outline-none w-full min-w-0 text-slate-700 bg-transparent" />
         </div>
         <div className="flex gap-2 flex-wrap">
           <select value={filtros.categoria} onChange={cambiarFiltro("categoria")} className={selectCls} aria-label="Categoría">
@@ -99,7 +99,7 @@ export default function ActivosListPage() {
             ))}
           </select>
           {hayFiltros && (
-            <button onClick={limpiar} className="inline-flex items-center gap-1 text-sm px-3 py-2 text-slate-600 hover:text-slate-900">
+            <button onClick={limpiar} className="inline-flex min-h-11 items-center gap-1 text-sm px-3 py-2 text-slate-600 hover:text-slate-900">
               <X size={14} /> Limpiar filtros
             </button>
           )}
@@ -112,7 +112,30 @@ export default function ActivosListPage() {
         </p>
       )}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <ul className="md:hidden divide-y divide-slate-100">
+          {activos.map((a) => (
+            <li key={a.id}>
+              <button
+                type="button"
+                onClick={() => navigate(`/dashboard/activos/${a.id}`)}
+                className="w-full min-h-12 px-4 py-3 text-left hover:bg-fisc-50/60"
+              >
+                <span className="flex items-start justify-between gap-2">
+                  <span className="text-sm font-medium text-slate-900">{a.descripcion}</span>
+                  <Badge tone={estadoTone(a.estado)}>{ESTADO_ACTIVO[a.estado] ?? a.estado}</Badge>
+                </span>
+                <span className="mt-1 block font-mono text-xs font-medium text-fisc-900 tracking-tight">{a.codigo}</span>
+                <span className="mt-0.5 block text-xs text-slate-500">{a.categoria_nombre} · {a.ubicacion_nombre}</span>
+              </button>
+            </li>
+          ))}
+          {!cargando && !error && activos.length === 0 && (
+            <li className="px-4 py-6 text-center text-sm text-slate-500">
+              {hayFiltros ? "Ningún activo coincide con los filtros." : "Aún no hay activos registrados."}
+            </li>
+          )}
+        </ul>
+        <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50/80 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-200/80">
@@ -145,10 +168,10 @@ export default function ActivosListPage() {
         </div>
       </div>
       {paginas > 1 && (
-        <div className="flex items-center justify-end gap-3 text-sm text-slate-600">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1.5 border border-slate-200 rounded-lg bg-white disabled:opacity-40">Anterior</button>
+        <div className="flex flex-wrap items-center justify-end gap-3 text-sm text-slate-600">
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="min-h-11 px-3 py-1.5 border border-slate-200 rounded-lg bg-white disabled:opacity-40">Anterior</button>
           <span>Página {page} de {paginas}</span>
-          <button disabled={page >= paginas} onClick={() => setPage(page + 1)} className="px-3 py-1.5 border border-slate-200 rounded-lg bg-white disabled:opacity-40">Siguiente</button>
+          <button disabled={page >= paginas} onClick={() => setPage(page + 1)} className="min-h-11 px-3 py-1.5 border border-slate-200 rounded-lg bg-white disabled:opacity-40">Siguiente</button>
         </div>
       )}
     </div>

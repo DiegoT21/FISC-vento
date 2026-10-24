@@ -137,7 +137,7 @@ export default function HistorialActivo({ activoId }) {
         <button
           onClick={() => setPagina((p) => p + 1)}
           disabled={cargando}
-          className="mt-4 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="mt-4 min-h-11 text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           {cargando ? "Cargando..." : "Ver cambios anteriores"}
         </button>
