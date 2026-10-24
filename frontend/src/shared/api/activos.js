@@ -27,5 +27,9 @@ export const actualizarActivo = (id, datos) => patch(`${ENDPOINTS.ACTIVOS}${id}/
 
 export const eliminarActivo = (id) => del(`${ENDPOINTS.ACTIVOS}${id}/`);
 
+export const listarTagsPorEditar = () => get(`${ENDPOINTS.ACTIVOS}por-editar/`);
+
+export const descartarTagPorEditar = (id) => del(`${ENDPOINTS.ACTIVOS}por-editar/${id}/`);
+
 // Imagen PNG del código de barras de un activo (para imprimir la etiqueta).
 export const obtenerCodigoBarras = (id) => getBlob(`${ENDPOINTS.ESCANEO}activos/${id}/barras/`);

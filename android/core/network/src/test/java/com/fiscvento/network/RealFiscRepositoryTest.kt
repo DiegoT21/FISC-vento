@@ -212,6 +212,20 @@ class RealFiscRepositoryTest {
         assertNull(repositorio.restoreSession())
     }
 
+    @Test
+    fun `un tag nuevo se envia a por editar`() = runTest {
+        servidor.enqueue(json(201, """
+            {"id":4,"epc":"E28011700000020A1B2C3D4E","estado":"nuevo"}
+        """))
+
+        val registro = repositorio.registrarTagPorEditar("E28011700000020A1B2C3D4E").getOrThrow()
+
+        assertEquals(RegistroTag("E28011700000020A1B2C3D4E", EstadoTagPorEditar.NUEVO), registro)
+        val solicitud = servidor.takeRequest()
+        assertEquals("/api/activos/por-editar/", solicitud.path)
+        assertEquals("POST", solicitud.method)
+    }
+
     private fun json(codigo: Int, cuerpo: String): MockResponse = MockResponse()
         .setResponseCode(codigo)
         .setHeader("Content-Type", "application/json")

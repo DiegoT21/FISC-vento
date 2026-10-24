@@ -143,6 +143,29 @@ class RealFiscRepository private constructor(
             ejecutar { api().listarUbicaciones(pagina) }
         }.map { ubicaciones -> ubicaciones.map(UbicacionDto::aModelo) }
 
+    override suspend fun registrarTagPorEditar(epc: String): Result<RegistroTag> {
+        val limpio = epc.trim()
+        if (limpio.isEmpty()) {
+            return Result.failure(ErrorApi("Lee un tag RFID antes de enviarlo."))
+        }
+        return ejecutar {
+            api().registrarTagPorEditar(EpcRequestDto(limpio))
+        }.fold(
+            onSuccess = { dto ->
+                val estado = when (dto.estado) {
+                    "nuevo" -> EstadoTagPorEditar.NUEVO
+                    "pendiente" -> EstadoTagPorEditar.PENDIENTE
+                    "registrado" -> EstadoTagPorEditar.REGISTRADO
+                    else -> return Result.failure(
+                        ErrorApi("El servidor no indico si el tag quedo por editar."),
+                    )
+                }
+                Result.success(RegistroTag(dto.epc, estado))
+            },
+            onFailure = { Result.failure(it) },
+        )
+    }
+
     override suspend fun asociarTag(activoId: Int, epc: String): Result<Activo> {
         val tag = epc.trim()
         if (tag.isEmpty()) {
@@ -419,6 +442,12 @@ class RealFiscRepository private constructor(
     private data class LookupRequestDto(val valor: String)
 
     @Serializable
+    private data class EpcRequestDto(val epc: String)
+
+    @Serializable
+    private data class TagPorEditarDto(val epc: String, val estado: String)
+
+    @Serializable
     private data class TagRfidRequestDto(@SerialName("tag_rfid") val tagRfid: String?)
 
     @Serializable
@@ -453,6 +482,9 @@ class RealFiscRepository private constructor(
 
         @POST("api/escaneo/escanear/")
         suspend fun lookup(@Body datos: LookupRequestDto): Response<ActivoDto>
+
+        @POST("api/activos/por-editar/")
+        suspend fun registrarTagPorEditar(@Body datos: EpcRequestDto): Response<TagPorEditarDto>
 
         @GET("api/activos/")
         suspend fun listarActivos(

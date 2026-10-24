@@ -1,11 +1,12 @@
 import {
   LayoutDashboard, Boxes, MapPin, HandCoins, ArrowLeftRight, ScrollText,
-  Users, ScanLine, BarChart3, Smartphone,
+  Users, ScanLine, BarChart3, Smartphone, ClipboardList,
 } from "lucide-react";
 
 export const NAV = [
   { path: "/dashboard", label: "Panel principal", icon: LayoutDashboard, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/activos", label: "Activos", icon: Boxes, roles: ["Administrador", "Custodio", "Auditor"] },
+  { path: "/dashboard/por-editar", label: "Por editar", icon: ClipboardList, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/escaneo", label: "Escaneo Barras / RFID", icon: ScanLine, roles: ["Administrador", "Custodio", "Auditor"] },
   { path: "/dashboard/ubicaciones", label: "Ubicaciones", icon: MapPin, roles: ["Administrador", "Auditor"] },
   { path: "/dashboard/reportes", label: "Reportes", icon: BarChart3, roles: ["Administrador", "Auditor"] },

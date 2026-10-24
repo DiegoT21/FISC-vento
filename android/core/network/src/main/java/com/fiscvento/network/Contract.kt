@@ -22,6 +22,11 @@ sealed interface LookupResult {
     data object NotFound : LookupResult
 }
 
+enum class EstadoTagPorEditar { NUEVO, PENDIENTE, REGISTRADO }
+
+/** Respuesta de POST /api/activos/por-editar/. No es la ficha del activo. */
+data class RegistroTag(val epc: String, val estado: EstadoTagPorEditar)
+
 interface FiscRepository {
     suspend fun login(user: String, pass: String): Result<Session>
     fun restoreSession(): Session?
@@ -35,6 +40,12 @@ interface FiscRepository {
     suspend fun listarUbicaciones(): Result<List<Ubicacion>>
     /** Guarda el EPC en Activo.tag_rfid. Debe fallar con mensaje claro si el tag ya pertenece a otro activo. */
     suspend fun asociarTag(activoId: Int, epc: String): Result<Activo>
+
+    /**
+     * POST /api/activos/por-editar/ con {"epc"}.
+     * Manda un tag leído que todavía no tiene ficha, para completarla en la web.
+     */
+    suspend fun registrarTagPorEditar(epc: String): Result<RegistroTag>
     suspend fun desasociarTag(activoId: Int): Result<Activo>
 
     /**

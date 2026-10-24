@@ -25,6 +25,7 @@ data class InventarioUiState(
     val epcs: Set<String> = emptySet(),
     val esperados: List<Activo> = emptyList(),
     val catalogo: List<Activo> = emptyList(),
+    val catalogoCompleto: Boolean = false,
     val resultado: ResultadoInventario? = null,
     val error: String? = null,
 )
@@ -39,6 +40,7 @@ class InventarioViewModel(
 
     private var eventsJob: Job? = null
     private var pantallaActiva = true
+    private val tagsEnviados = mutableSetOf<String>()
 
     init {
         cargarUbicaciones()
@@ -99,7 +101,12 @@ class InventarioViewModel(
             }
             _ui.update { state ->
                 val resultado = InventarioComparer.comparar(state.epcs, esperados, catalogo)
-                state.copy(esperados = esperados, catalogo = catalogo, resultado = resultado)
+                state.copy(
+                    esperados = esperados,
+                    catalogo = catalogo,
+                    catalogoCompleto = catalogoResult.isSuccess,
+                    resultado = resultado,
+                )
             }
         }
     }
@@ -132,11 +139,19 @@ class InventarioViewModel(
     }
 
     private fun onEpc(epc: String) {
+        val antes = _ui.value
+        if (epc in antes.epcs) return
+        val resultado = InventarioComparer.comparar(antes.epcs + epc, antes.esperados, antes.catalogo)
         _ui.update { state ->
             if (epc in state.epcs) return@update state
             val nuevos = state.epcs + epc
-            val resultado = InventarioComparer.comparar(nuevos, state.esperados, state.catalogo)
-            state.copy(epcs = nuevos, resultado = resultado)
+            state.copy(
+                epcs = nuevos,
+                resultado = InventarioComparer.comparar(nuevos, state.esperados, state.catalogo),
+            )
+        }
+        if (antes.catalogoCompleto && epc in resultado.desconocidos && tagsEnviados.add(epc)) {
+            viewModelScope.launch { repo.registrarTagPorEditar(epc) }
         }
     }
 

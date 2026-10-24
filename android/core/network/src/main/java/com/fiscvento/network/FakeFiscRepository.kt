@@ -5,6 +5,7 @@ class FakeFiscRepository : FiscRepository {
     private var url = "http://3.149.4.52/"
     private var session: Session? = null
     private var dispositivo: Dispositivo? = null
+    private val porEditar = mutableSetOf<String>()
     private val activos = mutableListOf(
         Activo(1, "ACT-0001", "Laptop (ejemplo)", "disponible", "Oficina", "E2801170000001"),
         Activo(2, "ACT-0002", "Proyector (ejemplo)", "disponible", "Sala 2", null),
@@ -28,6 +29,15 @@ class FakeFiscRepository : FiscRepository {
         if (i < 0) return Result.failure(IllegalArgumentException("Activo no existe"))
         if (activos.any { it.tagRfid == epc && it.id != activoId }) return Result.failure(IllegalStateException("Ese tag ya pertenece a otro activo"))
         activos[i] = activos[i].copy(tagRfid = epc); return Result.success(activos[i])
+    }
+    override suspend fun registrarTagPorEditar(epc: String): Result<RegistroTag> {
+        val limpio = epc.trim()
+        if (activos.any { it.tagRfid == limpio }) {
+            return Result.success(RegistroTag(limpio, EstadoTagPorEditar.REGISTRADO))
+        }
+        val nuevo = porEditar.add(limpio)
+        val estado = if (nuevo) EstadoTagPorEditar.NUEVO else EstadoTagPorEditar.PENDIENTE
+        return Result.success(RegistroTag(limpio, estado))
     }
     override suspend fun vincularDispositivo(
         codigo: String,

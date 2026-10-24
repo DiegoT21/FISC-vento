@@ -7,6 +7,7 @@ import com.fiscvento.hardware.ReadMode
 import com.fiscvento.hardware.ReaderGateway
 import com.fiscvento.hardware.ScanEvent
 import com.fiscvento.network.Activo
+import com.fiscvento.network.EstadoTagPorEditar
 import com.fiscvento.network.FiscRepository
 import com.fiscvento.network.LookupResult
 import kotlinx.coroutines.Job
@@ -43,6 +44,7 @@ class EscaneoViewModel(
     private var statusJob: Job? = null
     private var lookupJob: Job? = null
     private var pantallaActiva = false
+    private val tagsEnviados = mutableSetOf<String>()
 
     fun onResume() {
         pantallaActiva = true
@@ -77,13 +79,13 @@ class EscaneoViewModel(
                 if (_ui.value.esperandoTag) {
                     asociarTagLeido(event.epc)
                 } else {
-                    buscar(event.epc)
+                    buscar(event.epc, esRfid = true)
                 }
             }
         }
     }
 
-    fun buscar(valor: String) {
+    fun buscar(valor: String, esRfid: Boolean = false) {
         val limpio = valor.trim()
         if (limpio.isEmpty()) return
         lookupJob?.cancel()
@@ -113,13 +115,17 @@ class EscaneoViewModel(
                             }
                         }
                         LookupResult.NotFound -> {
-                            feedback.notFound()
-                            _ui.update {
-                                it.copy(
-                                    busqueda = false,
-                                    activo = null,
-                                    noEncontradoValor = limpio,
-                                )
+                            if (esRfid) {
+                                enviarTagPorEditar(limpio)
+                            } else {
+                                feedback.notFound()
+                                _ui.update {
+                                    it.copy(
+                                        busqueda = false,
+                                        activo = null,
+                                        noEncontradoValor = limpio,
+                                    )
+                                }
                             }
                         }
                     }
@@ -135,6 +141,49 @@ class EscaneoViewModel(
                 },
             )
         }
+    }
+
+    private suspend fun enviarTagPorEditar(epc: String) {
+        if (epc in tagsEnviados) {
+            feedback.success()
+            _ui.update {
+                it.copy(
+                    busqueda = false,
+                    activo = null,
+                    noEncontradoValor = null,
+                    mensaje = "Ese tag ya está en Por editar.",
+                )
+            }
+            return
+        }
+        repo.registrarTagPorEditar(epc).fold(
+            onSuccess = { registro ->
+                tagsEnviados += epc
+                val texto = when (registro.estado) {
+                    EstadoTagPorEditar.NUEVO -> "Tag enviado. Aparece en Por editar en la web."
+                    EstadoTagPorEditar.PENDIENTE -> "Ese tag ya está en Por editar."
+                    EstadoTagPorEditar.REGISTRADO -> "Ese tag ya tiene ficha."
+                }
+                feedback.success()
+                _ui.update {
+                    it.copy(
+                        busqueda = false,
+                        activo = null,
+                        noEncontradoValor = null,
+                        mensaje = texto,
+                    )
+                }
+            },
+            onFailure = { e ->
+                feedback.notFound()
+                _ui.update {
+                    it.copy(
+                        busqueda = false,
+                        error = e.message ?: "No se pudo enviar el tag a Por editar.",
+                    )
+                }
+            },
+        )
     }
 
     fun toggleEntradaManual() {

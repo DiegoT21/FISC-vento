@@ -93,3 +93,29 @@ class Activo(models.Model):
 
     def __str__(self):
         return f"{self.codigo} — {self.descripcion}"
+
+
+class TagPorEditar(models.Model):
+    """EPC leído por el TC22r que todavía no tiene ficha de activo.
+
+    En la web aparece en «Por editar». Al registrar el activo con ese
+    `tag_rfid`, el pendiente se elimina.
+    """
+
+    epc = models.CharField(max_length=100, unique=True)
+    leido_en = models.DateTimeField(auto_now_add=True)
+    leido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tags_por_editar",
+    )
+
+    class Meta:
+        verbose_name = "Tag por editar"
+        verbose_name_plural = "Tags por editar"
+        ordering = ["-leido_en"]
+
+    def __str__(self):
+        return self.epc

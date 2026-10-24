@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Activo, Categoria
+from .models import Activo, Categoria, TagPorEditar
 
 
 @admin.register(Activo)
@@ -11,3 +11,9 @@ class ActivoAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Categoria)
+
+
+@admin.register(TagPorEditar)
+class TagPorEditarAdmin(admin.ModelAdmin):
+    list_display = ["epc", "leido_en", "leido_por"]
+    search_fields = ["epc"]

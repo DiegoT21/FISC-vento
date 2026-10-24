@@ -6,7 +6,7 @@ from apps.prestamos.models import Prestamo
 from apps.ubicaciones.models import Departamento, Ubicacion
 from apps.usuarios.models import Rol, Usuario
 
-from .models import Activo, Categoria, EstadoActivo, OrigenActivo
+from .models import Activo, Categoria, EstadoActivo, OrigenActivo, TagPorEditar
 
 URL = "/api/activos/"
 
@@ -351,3 +351,79 @@ class CodigoDeBarrasEndpointTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "image/png")
         self.assertTrue(r.content.startswith(b"\x89PNG"))
+
+
+class TagPorEditarAPITests(APITestCase):
+    URL = "/api/activos/por-editar/"
+    EPC = "E28011700000020A1B2C3D4E"
+
+    def setUp(self):
+        self.custodio = Usuario.objects.create_user(username="custodio", password="x", rol=Rol.CUSTODIO)
+        self.auditor = Usuario.objects.create_user(username="auditor", password="x", rol=Rol.AUDITOR)
+        self.client.force_authenticate(self.custodio)
+        self.categoria = Categoria.objects.create(nombre="Equipo")
+        depto = Departamento.objects.create(nombre="Departamento de TI")
+        self.ubicacion = Ubicacion.objects.create(departamento=depto, nombre="Lab. 3-407")
+
+    def test_un_tag_nuevo_queda_por_editar_y_repetirlo_no_duplica(self):
+        alta = self.client.post(self.URL, {"epc": self.EPC.lower()}, format="json")
+        self.assertEqual(alta.status_code, 201)
+        self.assertEqual(alta.data["estado"], "nuevo")
+        self.assertEqual(alta.data["epc"], self.EPC)
+
+        otra = self.client.post(self.URL, {"epc": f" {self.EPC} "}, format="json")
+        self.assertEqual(otra.status_code, 200)
+        self.assertEqual(otra.data["estado"], "pendiente")
+        self.assertEqual(TagPorEditar.objects.count(), 1)
+
+        lista = self.client.get(self.URL)
+        self.assertEqual(lista.status_code, 200)
+        self.assertEqual([fila["epc"] for fila in lista.data], [self.EPC])
+
+    def test_un_tag_que_ya_tiene_ficha_no_entra_a_la_lista(self):
+        Activo.objects.create(
+            codigo="SVT-1",
+            descripcion="CPU",
+            categoria=self.categoria,
+            ubicacion=self.ubicacion,
+            tag_rfid=self.EPC,
+        )
+        r = self.client.post(self.URL, {"epc": self.EPC}, format="json")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data["estado"], "registrado")
+        self.assertEqual(TagPorEditar.objects.count(), 0)
+
+    def test_registrar_el_activo_saca_el_tag_de_por_editar(self):
+        self.client.post(self.URL, {"epc": self.EPC}, format="json")
+        r = self.client.post(
+            URL,
+            {
+                "codigo": "SVT-9",
+                "descripcion": "Monitor",
+                "categoria": self.categoria.id,
+                "ubicacion": self.ubicacion.id,
+                "tag_rfid": self.EPC,
+                "estado": "ACTIVO",
+            },
+            format="json",
+        )
+        self.assertEqual(r.status_code, 201)
+        self.assertFalse(TagPorEditar.objects.filter(epc=self.EPC).exists())
+
+    def test_el_auditor_puede_ver_la_lista_pero_no_agregar_ni_descartar(self):
+        tag = TagPorEditar.objects.create(epc=self.EPC, leido_por=self.custodio)
+        self.client.force_authenticate(self.auditor)
+        self.assertEqual(self.client.get(self.URL).status_code, 200)
+        self.assertEqual(self.client.post(self.URL, {"epc": self.EPC}, format="json").status_code, 403)
+        self.assertEqual(self.client.delete(f"{self.URL}{tag.id}/").status_code, 403)
+        self.assertTrue(TagPorEditar.objects.filter(pk=tag.id).exists())
+
+    def test_descartar_quita_el_pendiente(self):
+        tag = TagPorEditar.objects.create(epc=self.EPC)
+        r = self.client.delete(f"{self.URL}{tag.id}/")
+        self.assertEqual(r.status_code, 204)
+        self.assertFalse(TagPorEditar.objects.exists())
+
+    def test_epc_invalido_se_rechaza(self):
+        r = self.client.post(self.URL, {"epc": "no-es-un-tag"}, format="json")
+        self.assertEqual(r.status_code, 400)
