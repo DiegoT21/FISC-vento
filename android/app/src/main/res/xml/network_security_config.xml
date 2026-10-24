@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Staging va por HTTP (sin dominio). Al tener HTTPS se restringe. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
