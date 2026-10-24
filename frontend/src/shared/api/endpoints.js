@@ -10,4 +10,5 @@ export const ENDPOINTS = {
   AUDITORIA: "/api/auditoria/",
   REPORTES: "/api/reportes/",
   USUARIOS: "/api/usuarios/",
+  DISPOSITIVOS: "/api/dispositivos/",
 };
