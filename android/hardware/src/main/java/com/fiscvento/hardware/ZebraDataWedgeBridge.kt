@@ -6,7 +6,8 @@ import android.os.Bundle
 import android.util.Log
 
 /**
- * DataWedge: perfil de barras (Code 128 → intent) y RFID DW apagado para no competir con API3.
+ * DataWedge: perfil de barras (Code 128 + QR para vincular el equipo → intent) y RFID DW apagado
+ * para no competir con API3.
  */
 class ZebraDataWedgeBridge(private val context: Context) {
 
@@ -77,6 +78,8 @@ class ZebraDataWedgeBridge(private val context: Context) {
             putString("scanner_selection", "auto")
             putString("scanner_input_enabled", "true")
             putString("decoder_code128", "true")
+            // QR solo para la vinculacion del equipo (QR de la web); los activos siguen en Code 128.
+            putString("decoder_qrcode", "true")
         }
         val barcode = Bundle().apply {
             putString("PLUGIN_NAME", "BARCODE")
