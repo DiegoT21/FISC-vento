@@ -19,7 +19,8 @@ export default function AuditoriaPage() {
       )}
 
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[36rem] text-sm">
           <thead>
             <tr className="bg-slate-50/80 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-200/80">
               <th className="text-left px-4 py-2 font-semibold">Usuario</th>
@@ -45,6 +46,7 @@ export default function AuditoriaPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

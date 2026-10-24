@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -48,7 +49,11 @@ def login_view(request):
     if usuario is None or not usuario.is_active:
         return Response({"detail": "Credenciales inválidas."}, status=401)
 
+    # Un token por usuario (el modelo de DRF). Cada ingreso reinicia los 30 días;
+    # si no, un dispositivo que marcó «Recordar» heredaría la fecha del primero.
     token, _creado = Token.objects.get_or_create(user=usuario)
+    token.created = timezone.now()
+    token.save(update_fields=["created"])
     return Response({"token": token.key, "usuario": UsuarioSerializer(usuario).data})
 
 

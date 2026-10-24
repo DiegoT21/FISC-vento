@@ -32,7 +32,7 @@ const VACIO = {
 const aFormulario = (a) =>
   Object.fromEntries(Object.keys(VACIO).map((campo) => [campo, a[campo] == null ? "" : String(a[campo])]));
 
-const inputCls = "w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:border-fisc-600";
+const inputCls = "w-full min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:border-fisc-600";
 
 function Campo({ label, requerido, error, ayuda, children }) {
   return (
@@ -161,7 +161,7 @@ function FormularioActivo({ id, inicial }) {
         </p>
       )}
 
-      <form onSubmit={enviar} className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+      <form onSubmit={enviar} className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Campo label="Código" requerido error={mensajeCampo(errores, "codigo")} ayuda="Número de activo / Servitac (placa), p. ej. SVT-118423.">
             <input required maxLength={50} value={form.codigo} onChange={set("codigo")} className={`${inputCls} font-mono`} />
@@ -231,7 +231,7 @@ function FormularioActivo({ id, inicial }) {
           </button>
         ) : (
           <div className="space-y-1">
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <input
                 autoFocus
                 maxLength={100}
@@ -244,14 +244,16 @@ function FormularioActivo({ id, inicial }) {
                   }
                 }}
                 placeholder="Nombre de la categoría"
-                className={`${inputCls} flex-1`}
+                className={`${inputCls} min-w-0 sm:flex-1`}
               />
-              <button type="button" disabled={!nuevaCat.trim()} onClick={agregarCategoria} className="bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30 disabled:opacity-50">
-                Crear categoría
-              </button>
-              <button type="button" onClick={() => { setNuevaCat(null); setErrorCat(""); }} className="text-sm px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
-                Cancelar
-              </button>
+              <div className="flex gap-2">
+                <button type="button" disabled={!nuevaCat.trim()} onClick={agregarCategoria} className="min-h-11 flex-1 sm:flex-none bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30 disabled:opacity-50">
+                  Crear categoría
+                </button>
+                <button type="button" onClick={() => { setNuevaCat(null); setErrorCat(""); }} className="min-h-11 flex-1 sm:flex-none text-sm px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
+                  Cancelar
+                </button>
+              </div>
             </div>
             {errorCat && <p className="text-xs text-red-700">{errorCat}</p>}
           </div>
@@ -264,11 +266,11 @@ function FormularioActivo({ id, inicial }) {
           <p className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{errorGeneral}</p>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={() => navigate(destino)} className="text-sm px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
+        <div className="flex flex-wrap justify-end gap-2 pt-2">
+          <button type="button" onClick={() => navigate(destino)} className="min-h-11 text-sm px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">
             Cancelar
           </button>
-          <button type="submit" disabled={guardando || cargandoListas} className="bg-fisc-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
+          <button type="submit" disabled={guardando || cargandoListas} className="min-h-11 bg-fisc-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
             {guardando ? "Guardando..." : editando ? "Guardar cambios" : "Registrar activo"}
           </button>
         </div>

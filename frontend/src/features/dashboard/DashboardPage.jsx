@@ -70,8 +70,8 @@ export default function DashboardPage() {
                 </p>
               ) : (
                 pendientes(resumen).map((p) => (
-                  <div key={p.id} className="px-4 py-3 text-sm text-slate-700 flex items-center justify-between">
-                    <span>{p.texto}</span>
+                  <div key={p.id} className="px-4 py-3 text-sm text-slate-700 flex items-center justify-between gap-3 flex-wrap">
+                    <span className="min-w-0">{p.texto}</span>
                     <Badge tone={p.tono}>{p.etiqueta}</Badge>
                   </div>
                 ))

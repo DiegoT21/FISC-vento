@@ -11,7 +11,7 @@ const fmt = (n) => (n ?? 0).toLocaleString("es-PA");
 
 function Tarjeta({ titulo, subtitulo, children }) {
   return (
-    <section className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5">
+    <section className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5 min-w-0">
       <h2 className="text-base font-semibold text-slate-800">{titulo}</h2>
       {subtitulo && <p className="text-xs text-slate-500 mt-0.5">{subtitulo}</p>}
       <div className="mt-4">{children}</div>
@@ -46,7 +46,7 @@ function Dona({ por_estado, total }) {
         <text x="70" y="68" textAnchor="middle" className="fill-slate-900 text-[22px] font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</text>
         <text x="70" y="86" textAnchor="middle" className="fill-slate-500 text-[9px]">activos</text>
       </svg>
-      <ul className="space-y-2 text-sm min-w-[160px]">
+      <ul className="space-y-2 text-sm min-w-0 flex-1 basis-40">
         {Object.entries(por_estado).map(([estado, n]) => (
           <li key={estado} className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLOR_ESTADO[estado] }} />
@@ -107,13 +107,17 @@ function ComparativaExcelVsSistema() {
                 <span>{m.metrica}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-5 rounded-r bg-slate-200 transition-all duration-500" style={{ width: anchoAntes }} />
-                  <span className="text-xs font-medium text-slate-500 tabular-nums whitespace-nowrap">{m.antes} {m.unidad}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-5 min-w-0 flex-1">
+                    <div className="h-5 rounded-r bg-slate-200 transition-all duration-500" style={{ width: anchoAntes }} />
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 tabular-nums whitespace-nowrap shrink-0">{m.antes} {m.unidad}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-5 rounded-r bg-fisc-600 transition-all duration-500 shadow-sm" style={{ width: anchoDespues }} />
-                  <span className="text-xs font-bold text-fisc-800 tabular-nums whitespace-nowrap">{m.despues} {m.unidad}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-5 min-w-0 flex-1">
+                    <div className="h-5 rounded-r bg-fisc-600 transition-all duration-500 shadow-sm" style={{ width: anchoDespues }} />
+                  </div>
+                  <span className="text-xs font-bold text-fisc-800 tabular-nums whitespace-nowrap shrink-0">{m.despues} {m.unidad}</span>
                 </div>
               </div>
             </li>

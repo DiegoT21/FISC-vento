@@ -112,7 +112,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "config.exception_handler.manejador_de_excepciones",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "apps.usuarios.authentication.TokenConVigencia",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
