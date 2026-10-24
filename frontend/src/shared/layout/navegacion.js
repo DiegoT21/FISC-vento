@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Boxes, MapPin, HandCoins, ArrowLeftRight, ScrollText,
-  Users, ScanLine, BarChart3,
+  Users, ScanLine, BarChart3, Smartphone,
 } from "lucide-react";
 
 export const NAV = [
@@ -13,4 +13,5 @@ export const NAV = [
   { path: "/dashboard/traslados", label: "Traslados", icon: ArrowLeftRight, roles: ["Administrador", "Custodio"] },
   { path: "/dashboard/auditoria", label: "Auditoría", icon: ScrollText, roles: ["Administrador", "Auditor"] },
   { path: "/dashboard/administracion", label: "Administración", icon: Users, roles: ["Administrador"] },
+  { path: "/dashboard/dispositivos", label: "Dispositivos", icon: Smartphone, roles: ["Administrador"] },
 ];

@@ -38,6 +38,7 @@ LOCAL_APPS = [
     "apps.auditoria",
     "apps.reportes",
     "apps.prestamos",  # stretch goal module — see docs/decisiones/
+    "apps.dispositivos",  # vinculacion de equipos (TC22r) por QR
     "apps.traslados",  # stretch goal module — see docs/decisiones/
 ]
 
@@ -56,6 +57,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "config.middleware.AuditoriaMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "apps.dispositivos.middleware.DispositivoMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -118,6 +120,6 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "DEFAULT_THROTTLE_RATES": {"login": "10/min"},
+    "DEFAULT_THROTTLE_RATES": {"login": "10/min", "vinculacion": "10/min"},
     "PAGE_SIZE": 25,
 }

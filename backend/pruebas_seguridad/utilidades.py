@@ -5,7 +5,9 @@ from django.urls import URLResolver, get_resolver
 from apps.usuarios.models import Rol, Usuario
 
 # Rutas de la API que, por diseño, no exigen autenticación.
-RUTAS_PUBLICAS = {"api/usuarios/login/"}
+# Publicas por diseno: el login y el canje del codigo QR de vinculacion (un solo
+# uso, vence en 10 min, limitado por IP; ver apps/dispositivos/tests.py).
+RUTAS_PUBLICAS = {"api/usuarios/login/", "api/dispositivos/vincular/"}
 
 CLAVE = "Clave-segura-123"
 

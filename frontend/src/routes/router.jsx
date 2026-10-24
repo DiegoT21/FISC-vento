@@ -32,6 +32,11 @@ export const router = createBrowserRouter([
       { path: "reportes", element: <ReportesPage /> },
       { path: "auditoria", element: <AuditoriaPage /> },
       { path: "administracion", element: <UsuariosPage /> },
+      {
+        // Carga diferida: la librería del QR solo se descarga al abrir esta pantalla.
+        path: "dispositivos",
+        lazy: async () => ({ Component: (await import("../features/administracion/DispositivosPage")).default }),
+      },
       { path: "prestamos", element: <PrestamosPage /> },
       { path: "traslados", element: <TrasladosPage /> },
     ],
