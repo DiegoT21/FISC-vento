@@ -97,9 +97,11 @@ function FormularioActivo({ id, inicial, desdeTag = false }) {
   const destino = editando ? `/dashboard/activos/${id}` : desdeTag ? "/dashboard/por-editar" : "/dashboard/activos";
 
   async function agregarCategoria() {
+    const nombre = (nuevaCat ?? "").trim();
+    if (!nombre) return;
     setErrorCat("");
     try {
-      const nueva = await crearCategoria(nuevaCat.trim());
+      const nueva = await crearCategoria(nombre);
       setNuevaCat(null);
       setForm((f) => ({ ...f, categoria: String(nueva.id) }));
       setRecargaCat((n) => n + 1);
@@ -112,6 +114,10 @@ function FormularioActivo({ id, inicial, desdeTag = false }) {
     e.preventDefault();
     setErrores(null);
     setErrorGeneral("");
+    if (!form.categoria) {
+      setErrores({ categoria: ["Escribe de qué es y pulsa Crear."] });
+      return;
+    }
     setGuardando(true);
     const datos = {
       ...form,
@@ -149,6 +155,7 @@ function FormularioActivo({ id, inicial, desdeTag = false }) {
     );
   }
 
+  const listaCategorias = categorias.data ?? [];
   const cargandoListas = categorias.cargando || departamentos.cargando;
   const errorListas = categorias.error || departamentos.error;
 
@@ -199,13 +206,44 @@ function FormularioActivo({ id, inicial, desdeTag = false }) {
           <Campo label="Modelo" error={mensajeCampo(errores, "modelo")}>
             <input maxLength={100} value={form.modelo} onChange={set("modelo")} className={inputCls} />
           </Campo>
-          <Campo label="De qué es" requerido error={mensajeCampo(errores, "categoria")} ayuda="Categoría del activo.">
-            <select required value={form.categoria} onChange={set("categoria")} disabled={cargandoListas} className={inputCls}>
-              <option value="">Selecciona...</option>
-              {(categorias.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
+          <Campo
+            label="De qué es"
+            requerido
+            error={mensajeCampo(errores, "categoria") || (listaCategorias.length === 0 ? errorCat : "")}
+            ayuda={listaCategorias.length === 0 ? "Todavía no hay categorías. Escribe la primera y créala." : "Categoría del activo."}
+          >
+            {listaCategorias.length === 0 ? (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  maxLength={100}
+                  value={nuevaCat ?? ""}
+                  onChange={(e) => setNuevaCat(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (nuevaCat?.trim()) agregarCategoria();
+                    }
+                  }}
+                  placeholder="Equipo, mobiliario..."
+                  className={`${inputCls} min-w-0 sm:flex-1`}
+                />
+                <button
+                  type="button"
+                  disabled={!nuevaCat?.trim()}
+                  onClick={agregarCategoria}
+                  className="min-h-11 shrink-0 bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50"
+                >
+                  Crear
+                </button>
+              </div>
+            ) : (
+              <select required value={form.categoria} onChange={set("categoria")} disabled={cargandoListas} className={inputCls}>
+                <option value="">Selecciona...</option>
+                {listaCategorias.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            )}
           </Campo>
           <Campo label="Departamento y ubicación" requerido error={mensajeCampo(errores, "ubicacion")} ayuda="El grupo es el departamento; la opción, el lugar.">
             <select required value={form.ubicacion} onChange={set("ubicacion")} disabled={cargandoListas} className={inputCls}>
@@ -236,11 +274,11 @@ function FormularioActivo({ id, inicial, desdeTag = false }) {
           </Campo>
         </div>
 
-        {nuevaCat === null ? (
+        {listaCategorias.length > 0 && nuevaCat === null ? (
           <button type="button" onClick={() => setNuevaCat("")} className="text-sm text-fisc-800 hover:underline">
             + Nueva categoría
           </button>
-        ) : (
+        ) : listaCategorias.length > 0 ? (
           <div className="space-y-1">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <input
@@ -268,7 +306,7 @@ function FormularioActivo({ id, inicial, desdeTag = false }) {
             </div>
             {errorCat && <p className="text-xs text-red-700">{errorCat}</p>}
           </div>
-        )}
+        ) : null}
 
         {errores?.non_field_errors && (
           <p className="text-sm text-red-700">{errores.non_field_errors.join(" ")}</p>
