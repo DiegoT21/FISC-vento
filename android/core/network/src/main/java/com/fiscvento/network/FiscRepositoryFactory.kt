@@ -2,7 +2,8 @@ package com.fiscvento.network
 
 import android.content.Context
 
-/** Punto de entrada que usa :app. Codex lo reemplaza por la implementacion real (Retrofit contra Django). */
+/** Punto de entrada de la implementacion Retrofit contra Django. */
 object FiscRepositoryFactory {
-    fun create(context: Context, defaultUrl: String): FiscRepository = FakeFiscRepository().also { it.setServerUrl(defaultUrl) }
+    fun create(context: Context, defaultUrl: String): FiscRepository =
+        RealFiscRepository(context, defaultUrl)
 }
