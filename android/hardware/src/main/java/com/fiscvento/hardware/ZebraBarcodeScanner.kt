@@ -27,6 +27,7 @@ class ZebraBarcodeScanner(private val context: Context) {
                 extras[key] = intent.getStringExtra(key)
             }
             val barcode = DataWedgeIntentParser.extractBarcode(extras) ?: return
+            Log.i(TAG, "Lectura recibida (${barcode.length} caracteres)")
             _scans.tryEmit(barcode)
         }
     }
@@ -34,7 +35,11 @@ class ZebraBarcodeScanner(private val context: Context) {
     fun start() {
         running = true
         if (!registered) {
-            val filter = IntentFilter(DataWedgeIntentParser.ACTION_SCAN)
+            // DataWedge 15 manda el broadcast con CATEGORY_DEFAULT (así está el perfil).
+            // Sin esa categoría Android descarta el intent: el gatillo pita y la app no se entera.
+            val filter = IntentFilter(DataWedgeIntentParser.ACTION_SCAN).apply {
+                addCategory(Intent.CATEGORY_DEFAULT)
+            }
             ContextCompat.registerReceiver(
                 context,
                 receiver,
