@@ -190,8 +190,11 @@ de que el smoke quede verde del todo:
    próximo despliegue genera otra y las sesiones dejan de servir.
 3. Cuando el sitio ya cargue por Nginx, se pueden cerrar los puertos
    **8000** y **5432**. Los backups diarios no cambian de comando.
-4. HTTPS (cámara del navegador) se activa cuando exista un dominio. Los
-   pasos están en [`arquitectura.md`](arquitectura.md). Hasta entonces
+4. HTTPS se activa cuando exista un dominio. Hace falta para instalar la
+   PWA fuera de `localhost` (y, si se retomara, para la cámara). El paso
+   a paso de staging y lo que falta decidir están en
+   [`https-staging.md`](https-staging.md); el detalle, en
+   [`arquitectura.md`](arquitectura.md). Hasta entonces
    `DJANGO_SECURE_SSL` queda en `0` y el sitio sigue en HTTP.
 
 ## Convenciones del proyecto

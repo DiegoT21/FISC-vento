@@ -32,15 +32,15 @@ Las pruebas se validaron "rompiendo a propósito" el código: dar permiso de esc
 
 Prioridad alta, porque los servidores son lo que expone el sistema:
 
-1. **HTTPS sigue apagado a propósito.** `config.settings.prod` redirige a HTTPS salvo que `DJANGO_SECURE_SSL=0`. El despliegue deja esa variable en `0` hasta que haya dominio y certificado (pasos en `docs/arquitectura.md`). Mientras tanto el tráfico va en claro.
+1. **HTTPS sigue apagado a propósito.** `config.settings.prod` redirige a HTTPS salvo que `DJANGO_SECURE_SSL=0`. El despliegue deja esa variable en `0` hasta que haya dominio y certificado (pasos en `docs/arquitectura.md` y el checklist de staging en `docs/https-staging.md`). Mientras tanto el tráfico va en claro y la PWA no se puede instalar fuera de localhost.
 2. **Clave secreta.** Si `backend/.env` todavía tiene `change-me`, el script `scripts/preparar_env_produccion.sh` genera una en el servidor y no la imprime. Confirmar que el archivo no se copia fuera de la máquina.
 3. **Puertos.** El compose de producción ya no publica PostgreSQL (`5432`) ni Gunicorn (`8000`). El de desarrollo local sí publica el `5432`. En AWS, cerrar 5432 y 8000 cuando el sitio responda por Nginx, y abrir 80 (y 443 cuando se active TLS).
 4. **Panel de administración de Django** (`/admin/` en el mismo origen que la interfaz) sigue alcanzable desde internet; limitarlo por IP o ponerlo detrás de una VPN.
-5. **Cámara del navegador.** Exige HTTPS. La config de Nginx y Certbot está escrita; falta el dominio.
+5. **Cámara del navegador.** Exige HTTPS. La config de Nginx y Certbot está escrita; falta el dominio. La PWA tampoco se instala en HTTP.
 
 ## Limitaciones conocidas
 
-- El token de sesión se guarda en `localStorage`: ante un XSS, un atacante podría leerlo. No hay XSS conocido (React escapa el contenido y las pruebas vigilan las APIs peligrosas), pero conviene migrar a cookie `HttpOnly` si se añade contenido enriquecido.
+- El token de sesión se guarda en `localStorage`: ante un XSS, un atacante podría leerlo. No hay XSS conocido (React escapa el contenido y las pruebas vigilan las APIs peligrosas), pero conviene migrar a cookie `HttpOnly` si se añade contenido enriquecido. El service worker de la PWA no copia ese token ni las respuestas de `/api`.
 - Los tokens no caducan; solo mueren al cerrar sesión o desactivar al usuario.
 - El límite de intentos usa la caché del proceso: con varios workers cada uno cuenta por separado.
 - Las pruebas corren con SQLite en local y con PostgreSQL en el CI; no se probó contra PostgreSQL localmente.
