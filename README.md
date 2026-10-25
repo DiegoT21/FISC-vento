@@ -1,5 +1,9 @@
 # FISC-vento
 
+<p align="center">
+  <img src="marca/logo-horizontal-oscuro.png" alt="FISC-vento" width="640" />
+</p>
+
 Sistema centralizado de gestión y control de activos con captura
 automatizada de datos (código de barras y RFID) para la Facultad de
 Ingeniería de Sistemas Computacionales (FISC), Universidad Tecnológica de

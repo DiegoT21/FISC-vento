@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Library,
   Radio,
   Activity,
   ShieldCheck,
-  Cpu,
   User,
   Lock,
   Eye,
@@ -50,19 +48,13 @@ const Login = () => {
     <div className="min-h-dvh overflow-y-auto overflow-x-hidden bg-gray-50 flex">
       <div className="m-auto w-full max-w-6xl bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl overflow-hidden flex flex-col lg:flex-row lg:min-h-[700px]">
         {/* Left Column (Green) — en el lector y el celular el formulario va primero */}
-        <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-fisc-800 to-fisc-900 p-10 text-white flex-col justify-between relative overflow-hidden">
-          {/* Subtle background pattern or overlay could go here */}
+        <div
+          className="hidden lg:flex lg:w-[45%] bg-[#041C36] p-10 text-white flex-col justify-between relative overflow-hidden bg-cover bg-center"
+          style={{ backgroundImage: "url('/fondo-login.png')" }}
+        >
           <div className="relative z-10">
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-12">
-              <div className="w-12 h-12 rounded-xl border border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-sm">
-                <Library size={24} className="text-white/90" />
-              </div>
-              <div>
-                <p className="text-[10px] tracking-wider text-fisc-200 font-semibold uppercase">Universidad Tecnológica de Panamá</p>
-                <h2 className="text-lg font-bold tracking-wide">FISC · Campus V.L.S.</h2>
-              </div>
-            </div>
+            <img src="/logo-horizontal-oscuro.png" alt="FISC-vento" className="w-full max-w-md mb-8" />
+            <img src="/logo-3d.png" alt="" className="w-36 h-36 object-contain mb-8" />
 
             {/* Title & Description */}
             <h1 className="text-4xl font-extrabold mb-6 leading-tight">
@@ -117,13 +109,11 @@ const Login = () => {
         </div>
 
         {/* Right Column (White) */}
-        <div className="lg:hidden bg-fisc-800 text-white px-5 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center bg-white/10 shrink-0">
-            <Library size={20} />
-          </div>
+        <div className="lg:hidden bg-[#041C36] text-white px-5 py-4 flex items-center gap-3">
+          <img src="/icono-app-color.png" alt="" className="w-10 h-10 rounded-xl shrink-0" />
           <div className="min-w-0">
             <p className="text-[10px] tracking-wider text-fisc-200 font-semibold uppercase">Universidad Tecnológica de Panamá</p>
-            <h2 className="text-base font-bold leading-tight">FISC · Gestión de Activos</h2>
+            <h2 className="text-base font-bold leading-tight">FISC-vento</h2>
           </div>
         </div>
 
@@ -132,11 +122,9 @@ const Login = () => {
           {/* Top Bar */}
           <div className="flex justify-between items-center gap-3 mb-8 lg:mb-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-fisc-50 flex items-center justify-center text-fisc-800">
-                <Cpu size={22} />
-              </div>
+              <img src="/icono-app-color.png" alt="" className="w-10 h-10 rounded-xl" />
               <div>
-                <h2 className="text-sm font-bold text-gray-800 leading-tight">FISC · UTP</h2>
+                <h2 className="text-sm font-bold text-gray-800 leading-tight">FISC-vento</h2>
                 <p className="text-xs text-gray-500">Portal de Control de Activos</p>
               </div>
             </div>
