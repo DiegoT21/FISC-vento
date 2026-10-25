@@ -208,6 +208,11 @@ class RealFiscRepository private constructor(
 
     override fun dispositivoVinculado(): Dispositivo? = registro?.dispositivo
 
+    override fun olvidarVinculacion() {
+        registro = null
+        dispositivoGuardado.borrar()
+    }
+
     private fun recuperarUrl(defaultUrl: String): String {
         val predeterminada = normalizarUrl(defaultUrl)
         val guardada = servidorGuardado.leer()?.let(::urlNormalizadaONull)

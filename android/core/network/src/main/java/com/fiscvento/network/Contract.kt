@@ -62,4 +62,7 @@ interface FiscRepository {
 
     /** Registro local de la vinculacion, o null si este equipo no se ha vinculado. */
     fun dispositivoVinculado(): Dispositivo?
+
+    /** Borra la vinculación guardada en el equipo. El servidor no se entera. */
+    fun olvidarVinculacion()
 }

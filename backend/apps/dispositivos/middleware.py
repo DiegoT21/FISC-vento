@@ -13,8 +13,8 @@ class DispositivoMiddleware:
     """Si la peticion trae `X-Dispositivo-Token` (la app del TC22r), registra el
     ultimo uso del equipo y rechaza con 403 a los equipos desvinculados.
 
-    Sin el encabezado (web, otros clientes) no hace nada: la vinculacion es un
-    registro y no reemplaza el login por usuario y contrasena."""
+    Sin el encabezado (web, otros clientes) no hace nada. Quien trae un token
+    válido entra como la persona que generó el QR; ver AutenticacionDispositivo."""
 
     def __init__(self, get_response):
         self.get_response = get_response

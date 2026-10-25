@@ -1,51 +1,59 @@
 package com.fiscvento.campo.ui.login
 
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.painterResource
-import com.fiscvento.campo.R
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.fiscvento.campo.ui.theme.Fisc800
-import com.fiscvento.campo.ui.theme.ErrorRed
-import com.fiscvento.campo.ui.theme.Fisc700
+import com.fiscvento.campo.R
+import com.fiscvento.campo.ui.theme.CircuitBackground
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+
+private val Cian = Color(0xFF46E0FF)
+private val Texto = Color(0xFFF4FBFF)
+private val TextoSuave = Color(0xFFB7D4E8)
+private val ErrorClaro = Color(0xFFFFB4B4)
 
 @Composable
 fun LoginScreen(
@@ -54,9 +62,20 @@ fun LoginScreen(
 ) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val view = LocalView.current
+    val densidad = LocalDensity.current.density
+    val giro by rememberInfiniteTransition(label = "logo").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 7000, easing = LinearEasing)),
+        label = "giro",
+    )
 
-    // El lector queda activo en el login para poder leer el QR de vinculacion.
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, view) {
+        val ventana = (view.context as Activity).window
+        val barras = WindowCompat.getInsetsController(ventana, view)
+        barras.isAppearanceLightStatusBars = false
+        barras.isAppearanceLightNavigationBars = false
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> viewModel.onResume()
@@ -68,224 +87,119 @@ fun LoginScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.onPause()
+            barras.isAppearanceLightStatusBars = true
+            barras.isAppearanceLightNavigationBars = true
         }
     }
 
-    LaunchedEffect(state.sesionRestaurada) {
-        if (state.sesionRestaurada) {
-            viewModel.consumirSesionRestaurada()
-            onLoggedIn()
-        }
+    LaunchedEffect(state.dispositivo?.id, state.entrar) {
+        if (state.dispositivo == null) return@LaunchedEffect
+        if (!state.entrar) delay(1400)
+        viewModel.consumirEntrada()
+        onLoggedIn()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Image(
-            painter = painterResource(R.drawable.logo_3d),
-            contentDescription = "FISC-vento",
-            modifier = Modifier.size(120.dp),
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = "FISC-vento",
-            style = MaterialTheme.typography.headlineLarge,
-            color = Fisc800,
-        )
-        Text(
-            text = "Campo",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Fisc800,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Inicia sesión para escanear activos",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(20.dp))
-
-        PanelVinculacion(state = state, viewModel = viewModel)
-
-        Spacer(Modifier.height(20.dp))
-
-        OutlinedTextField(
-            value = state.serverUrl,
-            onValueChange = viewModel::onServerUrl,
-            label = { Text("URL del servidor") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Uri,
-                imeAction = ImeAction.Next,
-            ),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = state.usuario,
-            onValueChange = viewModel::onUsuario,
-            label = { Text("Usuario") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = state.contrasena,
-            onValueChange = viewModel::onContrasena,
-            label = { Text("Contraseña") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = if (state.mostrarContrasena) {
-                VisualTransformation.None
-            } else {
-                PasswordVisualTransformation()
-            },
-            trailingIcon = {
-                IconButton(
-                    onClick = viewModel::toggleMostrarContrasena,
-                    modifier = Modifier.height(48.dp),
-                ) {
-                    Icon(
-                        imageVector = if (state.mostrarContrasena) {
-                            Icons.Filled.VisibilityOff
-                        } else {
-                            Icons.Filled.Visibility
-                        },
-                        contentDescription = if (state.mostrarContrasena) {
-                            "Ocultar contraseña"
-                        } else {
-                            "Mostrar contraseña"
-                        },
-                    )
-                }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done,
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { viewModel.login(onLoggedIn) },
-            ),
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+    Box(Modifier.fillMaxSize()) {
+        CircuitBackground()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 28.dp, vertical = 36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Checkbox(
-                checked = state.recordar,
-                onCheckedChange = viewModel::onRecordar,
+            Image(
+                painter = painterResource(R.drawable.logo_3d),
+                contentDescription = "FISC-vento",
+                modifier = Modifier
+                    .size(168.dp)
+                    .graphicsLayer {
+                        rotationY = giro
+                        cameraDistance = 14f * densidad
+                    },
             )
-            Text("Recordar sesión", style = MaterialTheme.typography.bodyLarge)
-        }
-
-        state.error?.let { msg ->
-            Spacer(Modifier.height(12.dp))
-            Text(msg, color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
-        }
-
-        Spacer(Modifier.height(20.dp))
-        Button(
-            onClick = { viewModel.login(onLoggedIn) },
-            enabled = !state.cargando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-        ) {
-            if (state.cargando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.height(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = "FISC-vento",
+                color = Texto,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (state.dispositivo != null) "Entrando…" else "Escanea el QR de vinculación",
+                color = Cian,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+            )
+            if (state.dispositivo == null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Apunta el lector al QR de Dispositivos en la web y presiona el gatillo.",
+                    color = TextoSuave,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
                 )
-            } else {
-                Text("Entrar", style = MaterialTheme.typography.labelLarge)
             }
-        }
-    }
-}
 
-/** Vinculacion con el QR de la web: boton, estado y alternativa de pegar/teclear el codigo. */
-@Composable
-private fun PanelVinculacion(state: LoginUiState, viewModel: LoginViewModel) {
-    state.dispositivo?.let { dispositivo ->
-        Text(
-            text = "Dispositivo vinculado: ${dispositivo.nombre}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Fisc700,
-        )
-        Spacer(Modifier.height(8.dp))
-    }
-    state.avisoVinculacion?.let { msg ->
-        Text(msg, color = Fisc700, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-    }
-
-    if (!state.mostrarVincular) {
-        OutlinedButton(
-            onClick = viewModel::abrirVincular,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-        ) {
-            Text(if (state.dispositivo == null) "Vincular con QR" else "Volver a vincular con QR")
-        }
-        return
-    }
-
-    Text(
-        text = "Apunta el lector al QR de Dispositivos en la web y presiona el gatillo.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Spacer(Modifier.height(8.dp))
-    OutlinedTextField(
-        value = state.codigoManual,
-        onValueChange = viewModel::onCodigoManual,
-        label = { Text("O escribe el codigo de vinculacion") },
-        singleLine = true,
-        enabled = !state.vinculando,
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { viewModel.vincularManual() }),
-    )
-    state.errorVinculacion?.let { msg ->
-        Spacer(Modifier.height(8.dp))
-        Text(msg, color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
-    }
-    Spacer(Modifier.height(8.dp))
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        OutlinedButton(
-            onClick = viewModel::cerrarVincular,
-            enabled = !state.vinculando,
-            modifier = Modifier.height(48.dp),
-        ) {
-            Text("Cancelar")
-        }
-        Button(
-            onClick = viewModel::vincularManual,
-            enabled = !state.vinculando && state.codigoManual.isNotBlank(),
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp),
-        ) {
             if (state.vinculando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.height(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                )
+                Spacer(Modifier.height(20.dp))
+                CircularProgressIndicator(color = Cian, strokeWidth = 2.dp)
+            }
+
+            state.errorVinculacion?.let { msg ->
+                Spacer(Modifier.height(16.dp))
+                Text(msg, color = ErrorClaro, fontSize = 16.sp, textAlign = TextAlign.Center)
+            }
+
+            if (state.dispositivo == null) {
+            Spacer(Modifier.height(20.dp))
+            if (!state.mostrarCodigo) {
+                TextButton(onClick = viewModel::mostrarCodigo) {
+                    Text("Escribir el código", color = Cian, fontSize = 16.sp)
+                }
             } else {
-                Text("Vincular")
+                val colores = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Texto,
+                    unfocusedTextColor = Texto,
+                    focusedBorderColor = Cian,
+                    unfocusedBorderColor = TextoSuave,
+                    focusedLabelColor = Cian,
+                    unfocusedLabelColor = TextoSuave,
+                    cursorColor = Cian,
+                )
+                OutlinedTextField(
+                    value = state.serverUrl,
+                    onValueChange = viewModel::onServerUrl,
+                    label = { Text("URL del servidor") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = colores,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = state.codigoManual,
+                    onValueChange = viewModel::onCodigoManual,
+                    label = { Text("Código de vinculación") },
+                    singleLine = true,
+                    enabled = !state.vinculando,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = colores,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { viewModel.vincularManual() }),
+                )
+                Spacer(Modifier.height(8.dp))
+                TextButton(
+                    onClick = viewModel::vincularManual,
+                    enabled = !state.vinculando && state.codigoManual.isNotBlank(),
+                ) {
+                    Text("Vincular", color = Cian, fontSize = 16.sp)
+                }
+            }
             }
         }
     }

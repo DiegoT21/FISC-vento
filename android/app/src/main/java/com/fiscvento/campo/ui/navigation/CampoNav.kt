@@ -9,8 +9,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -60,8 +64,11 @@ fun CampoNav(factory: ViewModelFactory) {
     val backStack by navController.currentBackStackEntryAsState()
     val rutaActual = backStack?.destination?.route
     val enPrincipal = rutaActual in destinosPrincipales.map { it.route }
+    val enEntrada = rutaActual == null || rutaActual == Routes.LOGIN
 
     Scaffold(
+        containerColor = if (enEntrada) Color(0xFF041C36) else MaterialTheme.colorScheme.background,
+        contentWindowInsets = if (enEntrada) WindowInsets(0, 0, 0, 0) else ScaffoldDefaults.contentWindowInsets,
         bottomBar = {
             if (enPrincipal) {
                 NavigationBar(tonalElevation = 0.dp) {

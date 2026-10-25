@@ -152,6 +152,12 @@ class AdministracionDispositivosTests(BaseVinculacionTests):
         self.client.force_authenticate(self.admin)
         self.assertEqual(self.client.post(f"{URL_LISTA}999/revocar/").status_code, 404)
 
+    def test_el_token_del_equipo_entra_como_quien_genero_el_qr(self):
+        _, token = self.vincular_uno()
+        r = APIClient().get("/api/usuarios/me/", HTTP_X_DISPOSITIVO_TOKEN=token)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data["username"], "admin")
+
     def test_token_de_dispositivo_actualiza_ultimo_uso(self):
         dispositivo_id, token = self.vincular_uno()
         self.assertIsNone(Dispositivo.objects.get(pk=dispositivo_id).ultimo_uso)

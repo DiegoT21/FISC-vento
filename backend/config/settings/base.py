@@ -115,6 +115,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "apps.usuarios.authentication.TokenConVigencia",
+        "apps.dispositivos.authentication.AutenticacionDispositivo",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",

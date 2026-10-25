@@ -48,6 +48,7 @@ class AjustesViewModel(
 
     fun cerrarSesion(onDone: () -> Unit) {
         container.setRecordarSesion(false)
+        repo.olvidarVinculacion()
         repo.logout()
         onDone()
     }

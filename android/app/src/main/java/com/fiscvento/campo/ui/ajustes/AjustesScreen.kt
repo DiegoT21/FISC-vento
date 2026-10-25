@@ -94,7 +94,7 @@ fun AjustesScreen(
                 .fillMaxWidth()
                 .height(52.dp),
         ) {
-            Text("Cerrar sesión")
+            Text("Desvincular equipo")
         }
 
         Spacer(Modifier.height(24.dp))

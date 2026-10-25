@@ -51,6 +51,7 @@ class FakeFiscRepository : FiscRepository {
             Result.success(Dispositivo(1, nombre).also { dispositivo = it })
         }
     override fun dispositivoVinculado(): Dispositivo? = dispositivo
+    override fun olvidarVinculacion() { dispositivo = null }
     override suspend fun desasociarTag(activoId: Int): Result<Activo> {
         val i = activos.indexOfFirst { it.id == activoId }
         if (i < 0) return Result.failure(IllegalArgumentException("Activo no existe"))

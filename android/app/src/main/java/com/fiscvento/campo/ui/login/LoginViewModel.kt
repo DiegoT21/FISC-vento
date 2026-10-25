@@ -18,20 +18,12 @@ import kotlinx.coroutines.launch
 
 data class LoginUiState(
     val serverUrl: String = "",
-    val usuario: String = "",
-    val contrasena: String = "",
-    val mostrarContrasena: Boolean = false,
-    val recordar: Boolean = false,
-    val cargando: Boolean = false,
-    val error: String? = null,
-    val sesionRestaurada: Boolean = false,
-    // Vinculación con el QR de la web
     val dispositivo: Dispositivo? = null,
-    val mostrarVincular: Boolean = false,
+    val mostrarCodigo: Boolean = false,
     val codigoManual: String = "",
     val vinculando: Boolean = false,
     val errorVinculacion: String? = null,
-    val avisoVinculacion: String? = null,
+    val entrar: Boolean = false,
 )
 
 class LoginViewModel(
@@ -43,7 +35,6 @@ class LoginViewModel(
     private val _ui = MutableStateFlow(
         LoginUiState(
             serverUrl = repo.serverUrl(),
-            recordar = container.recordarSesion(),
             dispositivo = repo.dispositivoVinculado(),
         ),
     )
@@ -52,15 +43,7 @@ class LoginViewModel(
     private var eventsJob: Job? = null
     private var pantallaActiva = false
 
-    init {
-        if (container.recordarSesion() && repo.restoreSession() != null) {
-            _ui.update { it.copy(sesionRestaurada = true) }
-        } else if (!container.recordarSesion()) {
-            repo.logout()
-        }
-    }
-
-    /** Mientras el login está visible el lector queda activo para leer el QR de vinculación. */
+    /** Mientras esta pantalla está visible el lector queda listo para el QR. */
     fun onResume() {
         pantallaActiva = true
         reader.start(ReadMode.BARCODE)
@@ -78,18 +61,10 @@ class LoginViewModel(
         reader.stop()
     }
 
-    fun onServerUrl(v: String) = _ui.update { it.copy(serverUrl = v, error = null) }
-    fun onUsuario(v: String) = _ui.update { it.copy(usuario = v, error = null) }
-    fun onContrasena(v: String) = _ui.update { it.copy(contrasena = v, error = null) }
-    fun toggleMostrarContrasena() = _ui.update { it.copy(mostrarContrasena = !it.mostrarContrasena) }
-    fun onRecordar(v: Boolean) = _ui.update { it.copy(recordar = v) }
-    fun consumirSesionRestaurada() = _ui.update { it.copy(sesionRestaurada = false) }
+    fun consumirEntrada() = _ui.update { it.copy(entrar = false) }
 
-    fun abrirVincular() = _ui.update {
-        it.copy(mostrarVincular = true, errorVinculacion = null, avisoVinculacion = null)
-    }
-
-    fun cerrarVincular() = _ui.update { it.copy(mostrarVincular = false, errorVinculacion = null) }
+    fun onServerUrl(v: String) = _ui.update { it.copy(serverUrl = v, errorVinculacion = null) }
+    fun mostrarCodigo() = _ui.update { it.copy(mostrarCodigo = true, errorVinculacion = null) }
     fun onCodigoManual(v: String) = _ui.update { it.copy(codigoManual = v, errorVinculacion = null) }
 
     /** Código pegado o tecleado: acepta el texto completo del QR o solo el código. */
@@ -108,21 +83,20 @@ class LoginViewModel(
         vincular(_ui.value.serverUrl.trim(), codigo)
     }
 
-    /** Evento del lector: solo reacciona a QR de vinculación; el resto se ignora. */
+    /** Evento del lector: solo reacciona al QR de vinculación. */
     private fun alEscanear(valor: String) {
         val qr = VinculacionQr.parse(valor) ?: return
-        _ui.update { it.copy(mostrarVincular = true) }
         vincular(qr.serverUrl, qr.codigo)
     }
 
     private fun vincular(url: String, codigo: String) {
-        if (_ui.value.vinculando) return
+        if (_ui.value.vinculando || _ui.value.entrar) return
         if (url.isBlank()) {
             _ui.update { it.copy(errorVinculacion = "Indica la URL del servidor.") }
             return
         }
         viewModelScope.launch {
-            _ui.update { it.copy(vinculando = true, errorVinculacion = null, avisoVinculacion = null) }
+            _ui.update { it.copy(vinculando = true, errorVinculacion = null) }
             try {
                 repo.setServerUrl(url)
             } catch (e: IllegalArgumentException) {
@@ -137,9 +111,8 @@ class LoginViewModel(
                             vinculando = false,
                             dispositivo = dispositivo,
                             serverUrl = repo.serverUrl(),
-                            mostrarVincular = false,
                             codigoManual = "",
-                            avisoVinculacion = "Dispositivo vinculado. Ahora inicia sesión.",
+                            entrar = true,
                         )
                     }
                 },
@@ -149,39 +122,6 @@ class LoginViewModel(
                             vinculando = false,
                             errorVinculacion = e.message?.takeIf { m -> m.isNotBlank() }
                                 ?: "No se pudo vincular el dispositivo. Intenta de nuevo.",
-                        )
-                    }
-                },
-            )
-        }
-    }
-
-    fun login(onOk: () -> Unit) {
-        val state = _ui.value
-        if (state.usuario.isBlank() || state.contrasena.isBlank()) {
-            _ui.update { it.copy(error = "Escribe tu usuario y contraseña.") }
-            return
-        }
-        if (state.serverUrl.isBlank()) {
-            _ui.update { it.copy(error = "Indica la URL del servidor.") }
-            return
-        }
-        viewModelScope.launch {
-            _ui.update { it.copy(cargando = true, error = null) }
-            repo.setServerUrl(state.serverUrl.trim())
-            val result = repo.login(state.usuario.trim(), state.contrasena)
-            result.fold(
-                onSuccess = {
-                    container.setRecordarSesion(state.recordar)
-                    _ui.update { it.copy(cargando = false) }
-                    onOk()
-                },
-                onFailure = { e ->
-                    _ui.update {
-                        it.copy(
-                            cargando = false,
-                            error = e.message?.takeIf { m -> m.isNotBlank() }
-                                ?: "No se pudo iniciar sesión. Revisa usuario, contraseña y servidor.",
                         )
                     }
                 },

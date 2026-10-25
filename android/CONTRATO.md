@@ -29,7 +29,7 @@ Origen del lector: se porta de la app Ubika (`C:\Users\diego\OneDrive\Desktop\Po
 `POST /api/usuarios/login/`, `GET /api/usuarios/me/`, `POST /api/escaneo/escanear/ {"valor"}`, `GET/PATCH /api/activos/...` (campo `tag_rfid`), `POST /api/activos/por-editar/ {"epc"}` (tag leído sin ficha), `GET /api/ubicaciones/...`.
 
 ## Flujos
-1. Login: URL del servidor (precargada) + usuario + contrasena + recordar.
+1. Entrada: al abrir, si el equipo ya está vinculado pasa directo. Si no, se escanea el QR de Dispositivos (`fiscvento://vincular?...`); ese token autentica las peticiones y no hace falta usuario ni contraseña. «Desvincular equipo» en Ajustes borra el registro local.
 2. Escaneo: el gatillo del TC22r lee barras o RFID; se busca con `lookup`; muestra la ficha. Un código de barras que no existe avisa. Un tag RFID que no existe se envía con `registrarTagPorEditar` y queda en la lista «Por editar» de la web.
 3. Asociar tag: en la ficha de un activo, "Leer tag" toma el siguiente `RfidTag` y llama `asociarTag`.
 4. Inventario RFID: elegir ubicacion, leer en masa (sin duplicados), comparar con `listarActivos(ubicacionId)`: OK / faltantes / extras / desconocidos.
