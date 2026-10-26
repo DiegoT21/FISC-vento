@@ -114,9 +114,20 @@ jobs:
           check "http://${HOST}:5173/dashboard" "Frontend ruta interna" 200 || fail=1
           check "http://${HOST}:5173/admin/login/" "Backend admin" 200 || fail=1
           check "http://${HOST}:5173/api/activos/" "Backend API" 200 403 || fail=1
-          # El dev server de Vite responde 200 en /@vite/client. En staging
-          # lo sirve Nginx con el build, así que esa ruta tiene que ser 404.
-          check "http://${HOST}:5173/@vite/client" "/@vite/client" 404 || fail=1
+          # El dev server de Vite sirve JavaScript en /@vite/client. En staging
+          # lo sirve Nginx con el build y su fallback de SPA devuelve index.html
+          # (200, text/html) para rutas desconocidas. Lo que no debe pasar es
+          # que esa ruta devuelva JavaScript.
+          vite_ct=$(curl -sL -o /dev/null -w "%{content_type}" --max-time 15 "http://${HOST}:5173/@vite/client" || echo "")
+          case "$(printf '%s' "$vite_ct" | tr '[:upper:]' '[:lower:]')" in
+            *javascript*)
+              echo "FALLO /@vite/client sirve JavaScript ($vite_ct): parece el dev server de Vite"
+              fail=1
+              ;;
+            *)
+              echo "OK  /@vite/client no es el dev server de Vite (content-type: ${vite_ct:-vacío})"
+              ;;
+          esac
           server_ok=0
           server=""
           for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
