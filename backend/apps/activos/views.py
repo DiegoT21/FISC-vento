@@ -8,8 +8,8 @@ from rest_framework.response import Response
 
 from apps.usuarios.permissions import EscrituraSoloAdministrador, PuedeGestionarInventario
 
-from .models import Activo, Categoria, TagPorEditar
-from .serializers import ActivoSerializer, CategoriaSerializer
+from .models import Activo, Categoria, DocumentoActivo, TagPorEditar
+from .serializers import ActivoSerializer, CategoriaSerializer, DocumentoActivoSerializer
 
 _EPC = re.compile(r"^[0-9A-F]{8,100}$")
 
@@ -100,3 +100,11 @@ def descartar_tag_por_editar(request, pk):
     if not borrados:
         return Response({"detail": "Ese tag ya no está en Por editar."}, status=status.HTTP_404_NOT_FOUND)
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DocumentoActivoViewSet(viewsets.ModelViewSet):
+    permission_classes = [PuedeGestionarInventario]
+    queryset = DocumentoActivo.objects.all()
+    serializer_class = DocumentoActivoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["activo"]

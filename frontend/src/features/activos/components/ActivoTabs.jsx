@@ -1,8 +1,98 @@
-import { useState } from "react";
-import { FileText, Plus } from "lucide-react";
+import { useState, useRef } from "react";
+import { FileText, Trash2, Download, Upload } from "lucide-react";
 import { ORIGEN_ACTIVO } from "../../../shared/utils/estado";
 import EtiquetaCodigoBarras from "./EtiquetaCodigoBarras";
 import HistorialActivo from "./HistorialActivo";
+import { useApi } from "../../../shared/hooks/useApi";
+import { listarDocumentosActivo, subirDocumentoActivo, eliminarDocumentoActivo } from "../../../shared/api/activos";
+
+function DocumentosReal({ activoId }) {
+  const [recarga, setRecarga] = useState(0);
+  const [subiendo, setSubiendo] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  const { data, cargando, error } = useApi(() => listarDocumentosActivo(activoId), [activoId, recarga]);
+
+  const handleSubir = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setSubiendo(true);
+    try {
+      await subirDocumentoActivo(activoId, file.name, file);
+      setRecarga(n => n + 1);
+    } catch (err) {
+      alert("Error al subir el documento.");
+    } finally {
+      setSubiendo(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleEliminar = async (docId) => {
+    if (!confirm("¿Seguro que deseas eliminar este documento?")) return;
+    try {
+      await eliminarDocumentoActivo(docId);
+      setRecarga(n => n + 1);
+    } catch (err) {
+      alert("Error al eliminar.");
+    }
+  };
+
+  const documentos = data || [];
+
+  return (
+    <div className="mt-5">
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm font-medium text-slate-800">Documentos adjuntos</p>
+        <label className={`text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer ${subiendo ? 'opacity-50' : ''}`}>
+          <Upload className="w-4 h-4" />
+          {subiendo ? "Subiendo..." : "Subir archivo"}
+          <input type="file" ref={fileInputRef} onChange={handleSubir} disabled={subiendo} className="hidden" />
+        </label>
+      </div>
+
+      {cargando && <p className="text-sm text-slate-500">Cargando...</p>}
+      {error && <p className="text-sm text-red-600">Error al cargar documentos.</p>}
+
+      {!cargando && !error && documentos.length === 0 && (
+        <div className="flex flex-col items-center gap-2 py-8 text-center border border-dashed border-slate-200 rounded-xl">
+          <span className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
+            <FileText className="w-5 h-5" />
+          </span>
+          <p className="text-sm font-medium text-slate-800">Aún no hay documentos</p>
+          <p className="text-xs text-slate-500">Las facturas y actas de donación se pueden adjuntar aquí.</p>
+        </div>
+      )}
+
+      {!cargando && !error && documentos.length > 0 && (
+        <ul className="space-y-2 border border-slate-200 rounded-lg divide-y divide-slate-100">
+          {documentos.map(doc => (
+            <li key={doc.id} className="p-3 flex items-center justify-between hover:bg-slate-50">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-slate-400" />
+                <div>
+                  <a href={doc.archivo_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-fisc-700 hover:underline">
+                    {doc.nombre}
+                  </a>
+                  <p className="text-xs text-slate-400">Subido el {new Date(doc.subido_en).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a href={doc.archivo_url} download className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-200" title="Descargar">
+                  <Download className="w-4 h-4" />
+                </a>
+                <button onClick={() => handleEliminar(doc.id)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50" title="Eliminar">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 const TABS = [
   ["info", "Información"],
@@ -45,16 +135,7 @@ export default function ActivoTabs({ activo }) {
       )}
       {tab === "historial" && <HistorialActivo activoId={activo.id} />}
       {tab === "documentos" && (
-        <div className="mt-5 flex flex-col items-center gap-2 py-8 text-center border border-dashed border-slate-200 rounded-xl">
-          <span className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
-            <FileText className="w-5 h-5" />
-          </span>
-          <p className="text-sm font-medium text-slate-800">Aún no hay documentos</p>
-          <p className="text-xs text-slate-500">Las facturas y actas de donación se podrán adjuntar aquí.</p>
-          <button disabled className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 cursor-not-allowed">
-            <Plus className="w-4 h-4" /> Adjuntar documento (próximamente)
-          </button>
-        </div>
+        <DocumentosReal activoId={activo.id} />
       )}
     </>
   );

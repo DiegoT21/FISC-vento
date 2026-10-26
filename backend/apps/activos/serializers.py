@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Activo, Categoria, TagPorEditar
+from .models import Activo, Categoria, DocumentoActivo, TagPorEditar
 
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -73,3 +73,13 @@ def quitar_tag_pendiente(epc):
     """Al guardar la ficha, el EPC deja de estar en Por editar."""
     if epc:
         TagPorEditar.objects.filter(epc__iexact=epc).delete()
+
+
+
+class DocumentoActivoSerializer(serializers.ModelSerializer):
+    archivo_url = serializers.FileField(source="archivo", read_only=True)
+    
+    class Meta:
+        model = DocumentoActivo
+        fields = ["id", "activo", "nombre", "archivo", "archivo_url", "subido_en"]
+        read_only_fields = ["subido_en"]
