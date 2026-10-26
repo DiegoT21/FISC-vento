@@ -1,57 +1,10 @@
 import { useState, useRef } from "react";
-import { Clock, FileText, Plus, Pencil, Trash2, Download, Upload } from "lucide-react";
+import { FileText, Trash2, Download, Upload } from "lucide-react";
 import { ORIGEN_ACTIVO } from "../../../shared/utils/estado";
 import EtiquetaCodigoBarras from "./EtiquetaCodigoBarras";
+import HistorialActivo from "./HistorialActivo";
 import { useApi } from "../../../shared/hooks/useApi";
-import { listarLogsAuditoria } from "../../../shared/api/auditoria";
 import { listarDocumentosActivo, subirDocumentoActivo, eliminarDocumentoActivo } from "../../../shared/api/activos";
-
-const fecha = (iso) =>
-  new Date(iso).toLocaleDateString("es-PA", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-
-function Evento({ accion, usuario, detalleText, fechaISO }) {
-  const icon = accion === "CREACION" ? Plus : accion === "MODIFICACION" ? Pencil : Trash2;
-  const tono = accion === "CREACION" ? "bg-emerald-100 text-emerald-700" : accion === "MODIFICACION" ? "bg-fisc-100 text-fisc-700" : "bg-red-100 text-red-700";
-  const titulo = accion === "CREACION" ? "Activo registrado" : accion === "MODIFICACION" ? "Activo modificado" : "Activo eliminado";
-  
-  return (
-    <li className="pl-5 relative">
-      <span className={`absolute -left-[11px] top-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-4 ring-white ${tono}`}>
-        {<icon.type {...icon.props} className="w-3 h-3" />}
-      </span>
-      <p className="text-sm font-medium text-slate-800">{titulo} <span className="text-slate-500 font-normal">por {usuario || "Sistema"}</span></p>
-      {detalleText && <p className="text-xs text-slate-500 font-mono mt-0.5">{detalleText}</p>}
-      <p className="text-xs text-slate-400 mt-1">{fecha(fechaISO)}</p>
-    </li>
-  );
-}
-
-function HistorialReal({ activoId }) {
-  const { data, cargando, error } = useApi(() => listarLogsAuditoria({ page: 1, tabla: "Activo", objeto_id: activoId }), [activoId]);
-  
-  if (cargando) return <p className="text-sm text-slate-500 mt-5">Cargando historial...</p>;
-  if (error) return <p className="text-sm text-red-600 mt-5">Error al cargar historial.</p>;
-  
-  const logs = data?.results || [];
-  
-  if (logs.length === 0) {
-    return <p className="text-sm text-slate-500 mt-5">No hay historial registrado para este activo.</p>;
-  }
-
-  return (
-    <ol className="mt-5 relative border-l border-slate-200 ml-2 space-y-5">
-      {logs.map(log => (
-        <Evento 
-          key={log.id} 
-          accion={log.accion} 
-          usuario={log.usuario} 
-          detalleText={log.detalle && Object.keys(log.detalle).length > 0 ? JSON.stringify(log.detalle) : ""} 
-          fechaISO={log.fecha} 
-        />
-      ))}
-    </ol>
-  );
-}
 
 function DocumentosReal({ activoId }) {
   const [recarga, setRecarga] = useState(0);
@@ -152,12 +105,13 @@ export default function ActivoTabs({ activo }) {
 
   return (
     <>
-      <div className="flex gap-1 mt-5 border-b border-slate-100">
+      <div className="flex gap-1 mt-5 border-b border-slate-100 overflow-x-auto">
         {TABS.map(([id, label]) => (
           <button
             key={id}
+            type="button"
             onClick={() => setTab(id)}
-            className={`px-3 py-2 text-sm border-b-2 -mb-px ${tab === id ? "border-fisc-700 text-fisc-800 font-medium" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+            className={`px-3 min-h-11 text-sm border-b-2 -mb-px whitespace-nowrap ${tab === id ? "border-fisc-700 text-fisc-800 font-medium" : "border-transparent text-slate-500 hover:text-slate-700"}`}
           >
             {label}
           </button>
@@ -166,7 +120,7 @@ export default function ActivoTabs({ activo }) {
 
       {tab === "info" && (
         <>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 mt-4 text-sm">
             <div><p className="text-slate-400 text-xs">Categoría</p><p className="text-slate-800">{activo.categoria_nombre}</p></div>
             <div><p className="text-slate-400 text-xs">Origen</p><p className="text-slate-800">{ORIGEN_ACTIVO[activo.origen] ?? "—"}</p></div>
             <div><p className="text-slate-400 text-xs">Ubicación</p><p className="text-slate-800">{activo.departamento_nombre} / {activo.ubicacion_nombre}</p></div>
@@ -179,9 +133,7 @@ export default function ActivoTabs({ activo }) {
           <EtiquetaCodigoBarras key={`${activo.id}-${activo.codigo}`} activo={activo} />
         </>
       )}
-      {tab === "historial" && (
-        <HistorialReal activoId={activo.id} />
-      )}
+      {tab === "historial" && <HistorialActivo activoId={activo.id} />}
       {tab === "documentos" && (
         <DocumentosReal activoId={activo.id} />
       )}

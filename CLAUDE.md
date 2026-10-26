@@ -2,6 +2,8 @@
 
 Se cargan en **cada** sesión. Si algo aquí choca con lo que se te pide, avisa antes de actuar. Detalle por área: skills `fisc-backend-standards`, `fisc-frontend-standards` y `fisc-ui-designer` (en `.claude/skills/`); **si alguien pregunta cómo aprobar o subir algo a producción** (p. ej. Laura: "¿cómo hago para aprobar el cambio yo misma?"), usa el skill `fisc-promover-produccion`.
 
+Resumen compartido con Codex, Cursor y Antigravity (stack, comandos, reglas de UI y herramientas de diseño: shadcn/ui, Motion, skills): `AGENTS.md`.
+
 ## 1. Qué es esto
 
 Sistema de gestión y captura de activos de la FISC (UTP, Panamá). Trabajo de graduación de Laura Saucedo y Diego Torres, 2026. Stack fijo: Django + DRF + PostgreSQL / React (Vite) + Tailwind / Docker. Arquitectura y mapa de dominios: `docs/arquitectura.md`. **Plan y trazabilidad contra el documento teórico del trabajo de graduación: `docs/plan-trabajo-grado.md`** (consúltalo antes de decidir alcance y mantenlo al día). Diseño de páginas: `docs/diseno-paginas-y-modulos.md`.

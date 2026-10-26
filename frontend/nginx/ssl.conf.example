@@ -1,0 +1,19 @@
+# Copiar a frontend/nginx/ssl.conf en el servidor (está en .gitignore)
+# y cambiar app.fisc.example por el dominio real. Los PEM viven en el
+# volumen Docker letsencrypt, nunca en el repositorio.
+#
+# Nginx no arranca si ssl_certificate apunta a un archivo que no existe:
+# no actives docker-compose.https.yml antes de emitir el certificado.
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name app.fisc.example;
+
+    ssl_certificate     /etc/letsencrypt/live/app.fisc.example/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.fisc.example/privkey.pem;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:MozSSL:10m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    include /etc/nginx/snippets/app-locations.conf;
+}

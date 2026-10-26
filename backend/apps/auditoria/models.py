@@ -9,16 +9,7 @@ class Accion(models.TextChoices):
 
 
 class RegistroAuditoria(models.Model):
-    """Log de cambios: quién hizo qué, sobre qué tabla, y cuándo — atiende
-    el vacío señalado en el anteproyecto ("ausencia de historial de
-    cambios"). Poblado vía signals (ver signals.py), no manualmente desde
-    cada view.
-
-    Evaluar reemplazar este modelo casero por `django-auditlog` (su forma
-    de log calza con estas mismas columnas) o `django-simple-history`
-    (versionado completo) antes de invertir en más lógica aquí — ver
-    docs/decisiones/.
-    """
+    """Historial de cambios poblado automáticamente por señales de los dominios."""
 
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True

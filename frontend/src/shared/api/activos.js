@@ -1,6 +1,9 @@
 import { del, get, getBlob, patch, post } from "./client";
 import { ENDPOINTS } from "./endpoints";
 import { listarTodos } from "./listarTodos";
+import { leerToken } from "./sesion";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 // Lista paginada de la API (25 por página). `params` admite: search,
 // categoria (id), estado, ubicacion (id), origen, page.
@@ -27,22 +30,24 @@ export const actualizarActivo = (id, datos) => patch(`${ENDPOINTS.ACTIVOS}${id}/
 
 export const eliminarActivo = (id) => del(`${ENDPOINTS.ACTIVOS}${id}/`);
 
+export const listarTagsPorEditar = () => get(`${ENDPOINTS.ACTIVOS}por-editar/`);
+
+export const descartarTagPorEditar = (id) => del(`${ENDPOINTS.ACTIVOS}por-editar/${id}/`);
+
 // Documentos
 export const listarDocumentosActivo = (activoId) => listarTodos(`${ENDPOINTS.ACTIVOS}documentos/?activo=${activoId}`);
 
-// Para enviar archivos necesitamos un postFormData en el cliente, o usar fetch directamente
+// Para enviar archivos se usa fetch directo (multipart); el token sale de la sesion.
 export const subirDocumentoActivo = async (activoId, nombre, archivo) => {
-  const token = localStorage.getItem("fisc_token");
+  const token = leerToken();
   const formData = new FormData();
   formData.append("activo", activoId);
   formData.append("nombre", nombre);
   formData.append("archivo", archivo);
 
-  const res = await fetch(`${ENDPOINTS.ACTIVOS}documentos/`, {
+  const res = await fetch(`${BASE_URL}${ENDPOINTS.ACTIVOS}documentos/`, {
     method: "POST",
-    headers: {
-      Authorization: `Token ${token}`,
-    },
+    headers: token ? { Authorization: `Token ${token}` } : {},
     body: formData,
   });
   if (!res.ok) throw res;

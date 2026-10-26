@@ -8,7 +8,7 @@ import { useApi } from "../../shared/hooks/useApi";
 import { useRole } from "../../shared/hooks/useRole";
 import { mensajeDeError } from "../../shared/utils/errores";
 
-const inputCls = "w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:border-fisc-600";
+const inputCls = "w-full min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:border-fisc-600";
 
 function Campo({ label, requerido, error, ayuda, children }) {
   return (
@@ -59,14 +59,14 @@ function SolicitudModal({ onClose, onGuardado }) {
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col max-h-full">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col max-h-[calc(100dvh-2rem)]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <h2 className="text-lg font-semibold text-slate-900">Nueva solicitud de traslado</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 rounded-lg p-1">
+          <button type="button" onClick={onClose} className="min-w-11 min-h-11 inline-flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg">
             <X size={20} />
           </button>
         </div>
-        <div className="p-5 overflow-y-auto">
+        <div className="p-5 overflow-y-auto min-h-0">
           <form id="traslado-form" onSubmit={enviar} className="space-y-4">
             <Campo label="Activo" requerido error={mensajeCampo(errores, "activo")}>
               <select required value={activo} onChange={(e) => setActivo(e.target.value)} disabled={activos.cargando} className={inputCls}>
@@ -98,11 +98,11 @@ function SolicitudModal({ onClose, onGuardado }) {
             )}
           </form>
         </div>
-        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="text-sm px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-white bg-slate-50">
+        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex flex-wrap justify-end gap-2">
+          <button type="button" onClick={onClose} className="min-h-11 text-sm px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-white bg-slate-50">
             Cancelar
           </button>
-          <button type="submit" form="traslado-form" disabled={guardando || activos.cargando || departamentos.cargando} className="bg-fisc-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
+          <button type="submit" form="traslado-form" disabled={guardando || activos.cargando || departamentos.cargando} className="min-h-11 bg-fisc-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-fisc-900 disabled:opacity-50">
             {guardando ? "Enviando..." : "Solicitar traslado"}
           </button>
         </div>
@@ -138,12 +138,12 @@ export default function TrasladosPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Traslados</h1>
           <p className="text-sm text-slate-500 mt-1">Solicitudes de traslado entre ubicaciones</p>
         </div>
-        <button onClick={() => setModalAbierto(true)} className="bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30">
+        <button onClick={() => setModalAbierto(true)} className="self-start min-h-11 bg-fisc-800 hover:bg-fisc-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-fisc-500/30">
           + Nueva solicitud
         </button>
       </div>
@@ -161,7 +161,8 @@ export default function TrasladosPage() {
       )}
 
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[40rem] text-sm">
           <thead>
             <tr className="bg-slate-50/80 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-200/80">
               <th className="text-left px-4 py-2 font-semibold">Activo</th>
@@ -188,7 +189,7 @@ export default function TrasladosPage() {
                       <button
                         onClick={() => handleAutorizar(t.id)}
                         disabled={autorizando === t.id}
-                        className="flex items-center gap-1 ml-auto text-xs font-medium text-fisc-700 hover:text-fisc-900 bg-fisc-50 hover:bg-fisc-100 px-2 py-1 rounded disabled:opacity-50"
+                        className="inline-flex min-h-11 items-center gap-1 ml-auto text-xs font-medium text-fisc-700 hover:text-fisc-900 bg-fisc-50 hover:bg-fisc-100 px-3 py-1 rounded disabled:opacity-50"
                       >
                         {autorizando === t.id ? "..." : <><CheckCircle size={14} /> Autorizar</>}
                       </button>
@@ -205,6 +206,7 @@ export default function TrasladosPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {modalAbierto && (

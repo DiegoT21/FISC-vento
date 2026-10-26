@@ -1,11 +1,12 @@
 // Thin fetch wrapper around the Django API. Attaches the auth token
 // (set by useAuth on login) to every request automatically.
 
+import { leerToken } from "./sesion";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
-const TOKEN_KEY = "fisc_token";
 
 async function request(path, { method = "GET", body, headers, ...rest } = {}) {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = leerToken();
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: {
@@ -46,7 +47,7 @@ export const del = (path, options) => request(path, { ...options, method: "DELET
 // Descarga un archivo binario (p. ej. la imagen del código de barras) que
 // requiere el token, así que no se puede usar directo en un <img src>.
 export async function getBlob(path) {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = leerToken();
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: token ? { Authorization: `Token ${token}` } : {},
   });

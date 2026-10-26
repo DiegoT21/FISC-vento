@@ -1,3 +1,8 @@
+# Desarrollo local: Vite y runserver. Staging y producción usan
+# docker-compose.prod.yml (Nginx + Gunicorn). El name coincide para que
+# el volumen de Postgres sea el mismo si alguien levanta los dos.
+name: fisc-vento
+
 services:
   db:
     image: postgres:16-alpine
@@ -14,6 +19,7 @@ services:
   backend:
     build:
       context: ./backend
+      target: dev
       args:
         REQUIREMENTS_FILE: requirements/dev.txt
     restart: unless-stopped
@@ -29,6 +35,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: dev
     restart: unless-stopped
     env_file:
       - ./frontend/.env

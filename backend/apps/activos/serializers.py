@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Activo, Categoria, DocumentoActivo
+from .models import Activo, Categoria, DocumentoActivo, TagPorEditar
 
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -57,6 +57,23 @@ class ActivoSerializer(serializers.ModelSerializer):
 
     def validate_numero_serie(self, valor):
         return self._vacio_a_none(valor)
+
+    def create(self, validated_data):
+        activo = super().create(validated_data)
+        quitar_tag_pendiente(activo.tag_rfid)
+        return activo
+
+    def update(self, instance, validated_data):
+        activo = super().update(instance, validated_data)
+        quitar_tag_pendiente(activo.tag_rfid)
+        return activo
+
+
+def quitar_tag_pendiente(epc):
+    """Al guardar la ficha, el EPC deja de estar en Por editar."""
+    if epc:
+        TagPorEditar.objects.filter(epc__iexact=epc).delete()
+
 
 
 class DocumentoActivoSerializer(serializers.ModelSerializer):

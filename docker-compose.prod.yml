@@ -1,0 +1,80 @@
+# Staging y producción. No reemplaza a docker-compose.yml (ese sigue
+# siendo Vite + runserver para la máquina de cada quien).
+#
+# name fijo: el volumen de Postgres queda `fisc-vento_postgres_data`, el
+# mismo que ya usan los servidores. No lo renombres.
+name: fisc-vento
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fiscvento}
+      POSTGRES_USER: ${POSTGRES_USER:-fiscvento}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fiscvento}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fiscvento} -d ${POSTGRES_DB:-fiscvento}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    # Sin ports: 5432 no se publica. Los backups entran con `compose exec`.
+
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Pisan lo que diga backend/.env: este archivo es el modo producción.
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DJANGO_DEBUG: "0"
+      POSTGRES_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - staticfiles:/app/staticfiles
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 40s
+    # Sin ports: solo Nginx, en la red de Compose, habla con Gunicorn.
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - staticfiles:/var/www/static:ro
+      - certbot_www:/var/www/certbot:ro
+    ports:
+      - "80:80"
+      # La misma Nginx, no Vite. El grupo de seguridad ya abre 5173; así
+      # la URL actual sigue respondiendo mientras se abre el puerto 80.
+      - "5173:80"
+
+  certbot:
+    image: certbot/certbot:v2.11.0
+    profiles: ["certbot"]
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: ["certbot"]
+
+volumes:
+  postgres_data:
+  staticfiles:
+  certbot_www:
+  letsencrypt:

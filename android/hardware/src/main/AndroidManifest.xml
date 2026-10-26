@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+
+    <queries>
+        <package android:name="com.symbol.datawedge" />
+        <package android:name="com.zebra.rfid" />
+        <package android:name="com.zebra.rfidhost" />
+        <package android:name="com.zebra.rfidserial" />
+    </queries>
+
+</manifest>

@@ -1,0 +1,18 @@
+---
+description: Reglas de UI de FISC-vento (React 19 + Tailwind 3.4 + shadcn/ui)
+globs: frontend/src/**
+alwaysApply: false
+---
+
+Resumen del proyecto, comandos y reglas de Git: `AGENTS.md`.
+
+- Sigue primero `.claude/skills/fisc-ui-designer/SKILL.md` (paleta `fisc-*`, primario `fisc-800`, hover `fisc-700`).
+- Usa los componentes de `frontend/src/components/ui` (shadcn, importa con `@/components/ui/...`) y `cn()` de `@/lib/utils`. `primary`/`ring` = `fisc-800`; neutros slate.
+- Guía shadcn: `.agents/skills/shadcn/SKILL.md`. Para nuevos: `cd frontend && npx shadcn@latest add <nombre>` o el MCP `shadcn`.
+- Revisa con `.agents/skills/web-design-guidelines/SKILL.md`.
+- Objetivos táctiles ≥ 44 px (`min-h-11 min-w-11`) en lo que se use desde la pistola TC22r.
+- Librerías pesadas con `React.lazy`; nada pesado en el bundle inicial.
+- Motion solo vía `LazyMotion` + `domAnimation` y `m.*`; respeta `prefers-reduced-motion`.
+- Transiciones entre páginas: `viewTransition` de react-router.
+- No cargues `.claude/skills/design-taste-frontend` salvo que te lo pidan.
+- JS/JSX, sin TypeScript. Textos en español, trato de tú; estados de carga, error y vacío.

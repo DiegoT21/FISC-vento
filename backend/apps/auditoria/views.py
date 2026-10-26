@@ -1,5 +1,5 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.usuarios.permissions import SoloAdministradorYAuditor
 

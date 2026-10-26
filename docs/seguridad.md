@@ -24,6 +24,7 @@ Al agregar un recurso nuevo a la API: las pruebas de autenticación lo cubren so
 | Login sin límite de intentos | Fuerza bruta ilimitada sobre una cuenta | 10 intentos por minuto por IP y cuenta, luego 429 |
 | Producción sin `DJANGO_SECRET_KEY` | Arrancaba con una clave pública de desarrollo (sesiones y tokens firmados falsificables) | Se niega a arrancar si falta o tiene menos de 50 caracteres |
 | Pillow 10.4 (dependencia de los códigos de barras) | 17 vulnerabilidades conocidas | Pillow 12.3: `pip-audit` sin hallazgos; `npm audit` también limpio |
+| Servidores con `runserver` y Vite | Pensados para desarrollo, no para exponerlos | Staging y producción usan Gunicorn y Nginx, con `DEBUG` apagado. HTTPS queda preparado y apagado hasta que haya dominio |
 
 Las pruebas se validaron "rompiendo a propósito" el código: dar permiso de escritura al Auditor hizo fallar 12 comprobaciones, y quitar el límite de intentos hizo fallar la suya.
 
@@ -31,17 +32,16 @@ Las pruebas se validaron "rompiendo a propósito" el código: dar permiso de esc
 
 Prioridad alta, porque los servidores son lo que expone el sistema:
 
-1. **Qué configuración usan staging y producción.** `.env.example` indica `config.settings.dev` (con `DEBUG=True`, `ALLOWED_HOSTS=*` y CORS abierto) y los smoke tests acceden por `http://`, algo incompatible con `config.settings.prod` (que fuerza HTTPS). Es probable que ambos servidores corran con ajustes de desarrollo. Revisar `backend/.env` en cada uno (sin pegar valores secretos aquí).
-2. **Clave secreta real** definida en `DJANGO_SECRET_KEY`.
-3. **Puertos expuestos.** `docker-compose.yml` publica PostgreSQL (`5432`) en el host, con contraseña por defecto `fiscvento`. Comprobar en los grupos de seguridad de AWS que `5432` **no** es accesible desde internet.
-4. **Panel de administración de Django** (`:8000/admin/`) alcanzable desde internet; limitarlo por IP o ponerlo detrás de una VPN.
-5. **HTTPS.** Todo viaja en claro (credenciales y token); además la cámara del navegador exige HTTPS (sprint de Escaneo).
-6. **Servidores de desarrollo.** El despliegue usa `runserver` y el servidor de desarrollo de Vite; no están pensados para exposición pública (RNF-04 del documento describe Gunicorn y Nginx).
+1. **HTTPS sigue apagado a propósito.** `config.settings.prod` redirige a HTTPS salvo que `DJANGO_SECURE_SSL=0`. El despliegue deja esa variable en `0` hasta que haya dominio y certificado (pasos en `docs/arquitectura.md` y el checklist de staging en `docs/https-staging.md`). Mientras tanto el tráfico va en claro y la PWA no se puede instalar fuera de localhost.
+2. **Clave secreta.** Si `backend/.env` todavía tiene `change-me`, el script `scripts/preparar_env_produccion.sh` genera una en el servidor y no la imprime. Confirmar que el archivo no se copia fuera de la máquina.
+3. **Puertos.** El compose de producción ya no publica PostgreSQL (`5432`) ni Gunicorn (`8000`). El de desarrollo local sí publica el `5432`. En AWS, cerrar 5432 y 8000 cuando el sitio responda por Nginx, y abrir 80 (y 443 cuando se active TLS).
+4. **Panel de administración de Django** (`/admin/` en el mismo origen que la interfaz) sigue alcanzable desde internet; limitarlo por IP o ponerlo detrás de una VPN.
+5. **Cámara del navegador.** Exige HTTPS. La config de Nginx y Certbot está escrita; falta el dominio. La PWA tampoco se instala en HTTP.
 
 ## Limitaciones conocidas
 
-- El token de sesión se guarda en `localStorage`: ante un XSS, un atacante podría leerlo. No hay XSS conocido (React escapa el contenido y las pruebas vigilan las APIs peligrosas), pero conviene migrar a cookie `HttpOnly` si se añade contenido enriquecido.
-- Los tokens no caducan; solo mueren al cerrar sesión o desactivar al usuario.
+- El token no es una cookie `HttpOnly`. Con «Recordar este dispositivo» queda en `localStorage` y sobrevive a cerrar el navegador; si no se marca, va en una cookie de sesión (sin `Expires`, `SameSite=Lax`, `Secure` solo en HTTPS) que el navegador borra al cerrarse. En ambos casos el cliente la lee para el header `Authorization`. Ante un XSS, un script podría leer el token. No hay XSS conocido (React escapa el contenido y las pruebas vigilan las APIs peligrosas). La contraseña no se guarda. El service worker de la PWA no copia el token ni las respuestas de `/api`.
+- Los tokens caducan a los 30 días del último ingreso (`TokenConVigencia`, sobre `Token.created`). Cerrar sesión o desactivar al usuario también los invalida. Hay un solo token por usuario: un ingreso nuevo reinicia el plazo en todos los dispositivos que compartan esa clave.
 - El límite de intentos usa la caché del proceso: con varios workers cada uno cuenta por separado.
 - Las pruebas corren con SQLite en local y con PostgreSQL en el CI; no se probó contra PostgreSQL localmente.
 - No se hizo una prueba de penetración sobre los servidores desplegados; solo pruebas automatizadas sobre el código.

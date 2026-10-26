@@ -7,7 +7,7 @@ export default function StatCard({ label, value, tone, icon: Icon }) {
   };
   const [border, iconTone] = tones[tone || "neutral"];
   return (
-    <div className={`bg-white rounded-xl border ${border} shadow-sm p-4 flex-1 min-w-[170px]`}>
+    <div className={`bg-white rounded-xl border ${border} shadow-sm p-4 flex-1 min-w-[calc(50%-0.75rem)] sm:min-w-[170px]`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs text-slate-500">{label}</p>
         {Icon && (

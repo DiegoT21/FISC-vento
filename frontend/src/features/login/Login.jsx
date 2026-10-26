@@ -1,25 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Library,
   Radio,
   Activity,
   ShieldCheck,
-  Cpu,
   User,
   Lock,
   Eye,
+  EyeOff,
   Info,
   LogIn,
   Headset
 } from 'lucide-react';
 import { useAuth } from '../../shared/hooks/useAuth';
+import { leerCorreoRecordado, preferenciaRecordar } from '../../shared/api/sesion';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, autenticado } = useAuth();
-  const [email, setEmail] = useState('');
+  const passwordRef = useRef(null);
+  const [email, setEmail] = useState(leerCorreoRecordado);
   const [password, setPassword] = useState('');
+  const [verPassword, setVerPassword] = useState(false);
+  const [recordar, setRecordar] = useState(preferenciaRecordar);
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -32,7 +35,7 @@ const Login = () => {
     setError('');
     setEnviando(true);
     try {
-      await login(email, password);
+      await login(email, password, recordar);
       navigate('/dashboard');
     } catch {
       setError('Correo o contraseña incorrectos.');
@@ -42,22 +45,16 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8">
-      <div className="max-w-6xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
-        {/* Left Column (Green) */}
-        <div className="md:w-[45%] bg-gradient-to-br from-fisc-800 to-fisc-900 p-10 text-white flex flex-col justify-between relative overflow-hidden">
-          {/* Subtle background pattern or overlay could go here */}
+    <div className="min-h-dvh overflow-y-auto overflow-x-hidden bg-gray-50 flex">
+      <div className="m-auto w-full max-w-6xl bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl overflow-hidden flex flex-col lg:flex-row lg:min-h-[700px]">
+        {/* Left Column (Green) — en el lector y el celular el formulario va primero */}
+        <div
+          className="hidden lg:flex lg:w-[45%] bg-[#041C36] p-10 text-white flex-col justify-between relative overflow-hidden bg-cover bg-center"
+          style={{ backgroundImage: "url('/fondo-login.png')" }}
+        >
           <div className="relative z-10">
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-12">
-              <div className="w-12 h-12 rounded-xl border border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-sm">
-                <Library size={24} className="text-white/90" />
-              </div>
-              <div>
-                <p className="text-[10px] tracking-wider text-fisc-200 font-semibold uppercase">Universidad Tecnológica de Panamá</p>
-                <h2 className="text-lg font-bold tracking-wide">FISC · Campus V.L.S.</h2>
-              </div>
-            </div>
+            <img src="/logo-horizontal-oscuro.png" alt="FISC-vento" className="w-full max-w-md mb-8" />
+            <img src="/logo-3d.png" alt="" className="w-36 h-36 object-contain mb-8" />
 
             {/* Title & Description */}
             <h1 className="text-4xl font-extrabold mb-6 leading-tight">
@@ -112,28 +109,34 @@ const Login = () => {
         </div>
 
         {/* Right Column (White) */}
-        <div className="md:w-[55%] p-10 flex flex-col relative">
+        <div className="lg:hidden bg-[#041C36] text-white px-5 py-4 flex items-center gap-3">
+          <img src="/icono-app-color.png" alt="" className="w-10 h-10 rounded-xl shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[10px] tracking-wider text-fisc-200 font-semibold uppercase">Universidad Tecnológica de Panamá</p>
+            <h2 className="text-base font-bold leading-tight">FISC-vento</h2>
+          </div>
+        </div>
+
+        <div className="lg:w-[55%] p-5 sm:p-10 flex flex-col relative min-w-0">
 
           {/* Top Bar */}
-          <div className="flex justify-between items-center mb-16">
+          <div className="flex justify-between items-center gap-3 mb-8 lg:mb-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-fisc-50 flex items-center justify-center text-fisc-800">
-                <Cpu size={22} />
-              </div>
+              <img src="/icono-app-color.png" alt="" className="w-10 h-10 rounded-xl" />
               <div>
-                <h2 className="text-sm font-bold text-gray-800 leading-tight">FISC · UTP</h2>
+                <h2 className="text-sm font-bold text-gray-800 leading-tight">FISC-vento</h2>
                 <p className="text-xs text-gray-500">Portal de Control de Activos</p>
               </div>
             </div>
-            <div className="px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
+            <div className="px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600 shrink-0">
               Acceso Seguro
             </div>
           </div>
 
-          <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full">
+          <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full min-w-0">
             {/* Form Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Iniciar Sesión</h1>
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Iniciar Sesión</h1>
               <p className="text-sm text-gray-500">
                 Ingrese su correo electrónico y contraseña para acceder al sistema.
               </p>
@@ -153,10 +156,12 @@ const Login = () => {
                   </div>
                   <input
                     type="email"
+                    inputMode="email"
+                    autoComplete="username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50/50 text-sm focus:ring-2 focus:ring-fisc-800/20 focus:border-fisc-800 transition-colors placeholder-gray-400"
+                    className="block w-full min-h-12 pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50/50 text-base sm:text-sm focus:ring-2 focus:ring-fisc-800/20 focus:border-fisc-800 transition-colors placeholder-gray-400"
                     placeholder="ej. maria.arrocha@utp.ac.pa"
                   />
                 </div>
@@ -177,28 +182,43 @@ const Login = () => {
                     <Lock size={18} className="text-gray-400" />
                   </div>
                   <input
-                    type="password"
+                    ref={passwordRef}
+                    type={verPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50/50 text-sm focus:ring-2 focus:ring-fisc-800/20 focus:border-fisc-800 transition-colors placeholder-gray-400"
+                    className="block w-full min-h-12 pl-10 pr-12 py-3 border border-gray-200 rounded-xl bg-gray-50/50 text-base sm:text-sm focus:ring-2 focus:ring-fisc-800/20 focus:border-fisc-800 transition-colors placeholder-gray-400"
                     placeholder="••••••••••••"
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
-                    <Eye size={18} className="text-gray-400 hover:text-gray-600 transition-colors" />
-                  </div>
+                  <button
+                    type="button"
+                    aria-label={verPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-pressed={verPassword}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setVerPassword((visible) => !visible);
+                      passwordRef.current?.focus();
+                    }}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {verPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
 
               {/* Remember me */}
-              <div className="flex items-center justify-between pt-1 pb-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-gray-300 flex items-center justify-center group-hover:border-fisc-800 transition-colors">
-                    {/* Add checkmark icon here if checked */}
-                  </div>
-                  <span className="text-xs text-gray-600 font-medium">Recordar este dispositivo por 30 días</span>
+              <div className="flex items-center justify-between gap-3 pt-1 pb-2">
+                <label className="flex items-center gap-2 cursor-pointer min-h-11">
+                  <input
+                    type="checkbox"
+                    checked={recordar}
+                    onChange={(e) => setRecordar(e.target.checked)}
+                    className="h-5 w-5 shrink-0 rounded border-gray-300 accent-fisc-800"
+                  />
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium">Recordar este dispositivo por 30 días</span>
                 </label>
-                <Info size={14} className="text-gray-400" />
+                <Info size={16} className="text-gray-400 shrink-0" title="Si lo marcas, la sesión sigue al cerrar el navegador, hasta 30 días. Si no, termina al cerrarlo. La contraseña no se guarda." />
               </div>
 
               {/* Error */}
@@ -212,7 +232,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={enviando}
-                className="w-full bg-fisc-800 hover:bg-fisc-900 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-fisc-800/20"
+                className="w-full min-h-12 bg-fisc-800 hover:bg-fisc-900 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-fisc-800/20"
               >
                 {enviando ? "Ingresando..." : "Ingresar al Sistema"}
                 <LogIn size={18} />
@@ -221,8 +241,8 @@ const Login = () => {
           </div>
 
           {/* Bottom links */}
-          <div className="mt-auto pt-10">
-            <button className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-fisc-800 transition-colors border border-gray-100 mb-6">
+          <div className="mt-auto pt-8 sm:pt-10">
+            <button type="button" className="w-full min-h-12 py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold text-fisc-800 transition-colors border border-gray-100 mb-6">
               <Headset size={18} />
               ¿Problemas de acceso? Soporte FISC
             </button>

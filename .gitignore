@@ -34,6 +34,9 @@ db.sqlite3
 # Env files (each service has its own .env.example checked in)
 .env
 
+# Certificado de Nginx armado en el servidor (parte de ssl.conf.example)
+frontend/nginx/ssl.conf
+
 # Llaves SSH / credenciales — nunca deben subirse al repo
 *.pem
 *.key

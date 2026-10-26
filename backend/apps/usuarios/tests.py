@@ -1,4 +1,8 @@
+from datetime import timedelta
+
 from django.test import TestCase
+from django.utils import timezone
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from .models import Rol, Usuario
@@ -101,6 +105,50 @@ class LoginAPITests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["username"], "mdocente")
+
+    def test_login_renueva_los_30_dias_del_token(self):
+        token = Token.objects.create(user=self.usuario)
+        Token.objects.filter(pk=token.pk).update(created=timezone.now() - timedelta(days=20))
+
+        response = self.client.post(
+            "/api/usuarios/login/",
+            {"email": "mdocente", "password": "clave-segura-123"},
+        )
+        self.assertEqual(response.status_code, 200)
+        token.refresh_from_db()
+        self.assertGreater(token.created, timezone.now() - timedelta(minutes=1))
+        self.assertEqual(response.data["token"], token.key)
+
+    def test_token_de_menos_de_30_dias_sigue_valido(self):
+        login = self.client.post(
+            "/api/usuarios/login/",
+            {"email": "mdocente", "password": "clave-segura-123"},
+        )
+        token = Token.objects.get(key=login.data["token"])
+        Token.objects.filter(pk=token.pk).update(created=timezone.now() - timedelta(days=29))
+
+        response = self.client.get(
+            "/api/usuarios/me/", HTTP_AUTHORIZATION=f"Token {token.key}"
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_token_de_mas_de_30_dias_se_rechaza_y_se_borra(self):
+        login = self.client.post(
+            "/api/usuarios/login/",
+            {"email": "mdocente", "password": "clave-segura-123"},
+        )
+        clave = login.data["token"]
+        token = Token.objects.get(key=clave)
+        Token.objects.filter(pk=token.pk).update(created=timezone.now() - timedelta(days=31))
+
+        response = self.client.get(
+            "/api/usuarios/me/", HTTP_AUTHORIZATION=f"Token {clave}"
+        )
+        # DRF convierte el 401 en 403 si la excepción no trae WWW-Authenticate,
+        # igual que un token inválido en el resto de la API.
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("expiró", str(response.data["detail"]).lower())
+        self.assertFalse(Token.objects.filter(key=clave).exists())
 
     def test_logout_invalida_el_token(self):
         login = self.client.post(

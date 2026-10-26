@@ -25,6 +25,13 @@ if [ "$confirmacion" != "si" ]; then
   exit 1
 fi
 
-gunzip -c "$ARCHIVO" | sudo docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+if sudo docker ps --filter status=running --filter label=com.docker.compose.service=db \
+  --format '{{.Label "com.docker.compose.project.config_files"}}' 2>/dev/null \
+  | grep -q 'docker-compose.prod.yml'; then
+  COMPOSE=(sudo docker compose -f docker-compose.prod.yml)
+else
+  COMPOSE=(sudo docker compose)
+fi
+gunzip -c "$ARCHIVO" | "${COMPOSE[@]}" exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
 echo "Restauración completa."
